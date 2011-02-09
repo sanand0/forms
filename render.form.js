@@ -28,7 +28,7 @@ this.simpleform = function(form, data, errors) {
     radio:          '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", v === val ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
     checkbox:       '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", val.indexOf(v) >= 0 ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
     textarea:       '<textarea name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>"><%= val %></textarea>',
-    select:         '<select name="<%= field.id %>" id="<%= field.id %>"><% for (var v in field.values) { print("<option>", v, "</option>"); } %></select>',
+    select:         '<select name="<%= field.id %>" id="<%= field.id %>"><% for (var v in field.values) { print("<option", v==val ? " selected=\'selected\'" : "", ">", v, "</option>"); } %></select>',
 
     // Error messages
     error:          '<span class="error"> <%= msg %></span>'
@@ -99,8 +99,13 @@ var validate = this.validate = function(form, data) {
       var key = field.id,
           val = data[key];
       for (var j=0, check; check=field.validations[j]; j++) {
-        if (_.isBoolean(check[0]) && !val) { report(key, check[1]); }
-        if (_.isRegExp(check[0]) && !check[0].test(val)) { report(key, check[1]); }
+        if ((_.isBoolean    (check[0]) && !val) ||
+            (_.isRegExp     (check[0]) && !check[0].test(val)) ||
+            (_.isArray      (check[0]) && !_.contains(check[0], val)) ||
+            (_.isFunction   (check[0]) && !check[0](val))
+        ) {
+          report(key, check[1]);
+        }
       }
     }
   }

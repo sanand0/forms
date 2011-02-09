@@ -48,7 +48,8 @@ this.form = {
         "type": "select",
         "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "validations": [
-            [true, 'Selection cannot be blank']
+            [true, 'Selection cannot be blank'],
+            [['1','2','3'], 'Value must be 1, 2 or 3']
         ]
       },
       {
