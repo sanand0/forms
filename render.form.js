@@ -1,79 +1,37 @@
-// Underscore.js template library
+var qs = require('./node_modules/node-querystring');
+var _ = require('./node_modules/underscore')._;
+
+// Render a form in FDL into XHTML
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-var _ = this._ = (function(_){
+this.simpleform = function(form, data, errors) {
+  data = data || {};
+  errors = errors || {};
 
-  // Copied from the template section of
-  // [underscore.js](http://documentcloud.github.com/underscore/underscore.js)
-
-  // By default, Underscore uses ERB-style template delimiters, change the
-  // following template settings to use alternative delimiters.
-  _.templateSettings = {
-    evaluate    : /<%([\s\S]+?)%>/g,
-    interpolate : /<%=([\s\S]+?)%>/g
-  };
-
-  // JavaScript micro-templating, similar to John Resig's implementation.
-  // Underscore templating handles arbitrary delimiters, preserves whitespace,
-  // and correctly escapes quotes within interpolated code.
-  _.template = function(str, data) {
-    var c  = _.templateSettings;
-    var tmpl = 'var __p=[],print=function(){__p.push.apply(__p,arguments);};' +
-      'with(obj||{}){__p.push(\'' +
-      str.replace(/\\/g, '\\\\')
-         .replace(/'/g, "\\'")
-         .replace(c.interpolate, function(match, code) {
-           return "'," + code.replace(/\\'/g, "'") + ",'";
-         })
-         .replace(c.evaluate || null, function(match, code) {
-           return "');" + code.replace(/\\'/g, "'")
-                              .replace(/[\r\n\t]/g, ' ') + "__p.push('";
-         })
-         .replace(/\r/g, '\\r')
-         .replace(/\n/g, '\\n')
-         .replace(/\t/g, '\\t')
-         + "');}return __p.join('');";
-    var func = new Function('obj', tmpl);
-    return data ? func(data) : func;
-  };
-
-  // End of copied section
-  return _;
-})({});
-
-
-// Render a form in FDL
-// ------------------------------------------------------------------------------------------------------------------------------------------------------
-/*
- Principles:
-    - Markup is XHTML 4.0, not HTML5
-    -
-
- <form id="" action="" method="post">
-  <h2>Section heading</h2>
-  <p>help</p>
-  <fieldset>
-   <dl>
-    <dt><label for="">...</label><p>... help ...</p></dt>
-    <dd><input type="..."></input>
-   </dl>
-  </fieldset>
- </form>
-*/
-this.simpleform = function(form) {
   // Basic templates
   var templates = {
+    // Start and end of a form. TODO: Form action
     form_start:     '<form method="post">',
     form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>',
-    field_start:    '<dt><label for="<%= field.id %>"><%= field.label %></label><% if (field.help) { print("<p>", field.help, "</p>") } %></dt><dd>',
-    field_end:      '</dd>',
+
+    // Start and end of a section
     section_start:  '<div class="section" id="<%= field.id %>"><h2><%= field.section %></h2><% if (field.help) { print("<p>", field.help, "</p>") } %><fieldset><dl>',
     section_end:    '</dl></fieldset></div>',
+    // This is used when the form starts directly with a field, not with a section
+    section_start0: '<div class="section"><fieldset><dl>',
 
-    input:          '<input name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>" value="<%= field.default || "" %>"/>',
-    radio:          '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", v === field.default ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
-    checkbox:       '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", field.default.indexOf(v) >= 0 ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
-    textarea:       '<textarea name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>"><%= field.default || "" %></textarea>',
-    select:         '<select name="<%= field.id %>" id="<%= field.id %>"><% for (var v in field.values) { print("<option>", v, "</option>"); } %></select>'
+    // Start and end of a field
+    field_start:    '<dt class="<%= error ? "error" : "" %>"><label for="<%= field.id %>"><%= field.label %></label><% if (field.help) { print("<p>", field.help, "</p>") } %></dt><dd>',
+    field_end:      '</dd>',
+
+    // Field definitions for various field types. `input` is the generic catch-all
+    input:          '<input name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>" value="<%= val %>"/>',
+    radio:          '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", v === val ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
+    checkbox:       '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", val.indexOf(v) >= 0 ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
+    textarea:       '<textarea name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>"><%= val %></textarea>',
+    select:         '<select name="<%= field.id %>" id="<%= field.id %>"><% for (var v in field.values) { print("<option>", v, "</option>"); } %></select>',
+
+    // Error messages
+    error:          '<span class="error"> <%= msg %></span>'
   };
 
   // t('template-name', data) renders the template
@@ -81,27 +39,31 @@ this.simpleform = function(form) {
 
   // html is an array that holds the output
   var html = [];
-  // Sections delimit the form. section_open indicates that we've opened a section
-  html.section_open = false;
 
   html.push(t('form_start', {form:form}));
   for (var i=0, field; field=form.fields[i]; i++) {
     // Fields can be either a input definition or a section definition.
     // If it's an input definition...
     if (field.label) {
-      html.push(t('field_start', {field:field}));
+      // If the first field isn't a section, start with a blank section
+      if (i == 0) { html.push(t('section_start0')); }
 
       // Pick the right template and use it
-      var tmpl = templates[field.type] ? field.type : 'input';
-      html.push(t(tmpl, {field:field}));
-      html.push(t('field_end', {field:field}));
+      var tmpl = templates[field.type] ? field.type : 'input',
+          param = {field:field, val: data[field.id] || field.default || '', error:errors[field.id]};
+      html.push(t('field_start', param));
+      html.push(t(tmpl, param));
+      _.each(param.error, function(e) { html.push(t('error', {msg:e})); });
+      html.push(t('field_end', param));
     }
 
     // If it's a section definition,
     else if (field.section) {
-      if (html.section_open) { html.push(t('section_end')); html.section_open = false; }
+      // Close the previous section, except for the first field
+      if (i > 0) { html.push(t('section_end')); }
+
+      // Push the HTML for the section
       html.push(t('section_start', {field:field}));
-      html.section_open = true;
     }
   }
 
@@ -111,11 +73,37 @@ this.simpleform = function(form) {
   return html.join('');
 };
 
-// Converts form POST data into a data object
+// Converts form POST data into a data object and returns it
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
+this.parseform = function(form, request, callback) {
+  var data = '';
+  request.setEncoding('utf8');
+  request.addListener('data', function(chunk) { data += chunk; });
+  request.addListener('end', function() {
+    callback(data ? qs.parse(data) : {});
+  });
+};
 
 // Validates form data
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-this.validate = function(form, data) {
+var validate = this.validate = function(form, data) {
+  var errors = {};
 
+  var report = function(field, msg) {
+    if (!errors[field]) { errors[field] = []; }
+    errors[field].push(msg);
+  };
+
+  for (var i=0, field; field=form.fields[i]; i++) {
+    if (field.validations) {
+      var key = field.id,
+          val = data[key];
+      for (var j=0, check; check=field.validations[j]; j++) {
+        if (_.isBoolean(check[0]) && !val) { report(key, check[1]); }
+        if (_.isRegExp(check[0]) && !check[0].test(val)) { report(key, check[1]); }
+      }
+    }
+  }
+
+  return errors;
 };

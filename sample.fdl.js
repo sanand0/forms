@@ -13,21 +13,29 @@ this.form = {
         "help": "This is a a date field. On modern browsers, you can select dates. On old browsers, you have to type it in. We will enhance the UI here to make it a date selection widget.",
         "type": "date",
         "default": "today", // TODO: This is yet to be implemented
-        "validations": [true]
+        "validations": [
+            [true, 'Date cannot be blank']
+        ]
       },
       {
         "id": "text",
         "label": "Text field",
-        "help": "This is a simple text field",
+        "help": "This is a simple text field. It must begin with A and end with Z.",
         "type": "text",
-        "validations": [true]
+        "validations": [
+          [true, 'Text must not be blank'],
+          [/^A/i, 'Text must start with A'],
+          [/Z$/i, 'Text must end with Z']
+        ]
       },
       {
         "id": "textarea",
         "label": "Paragraph text",
         "help": "This lets you type in a paragraph of text",
         "type": "textarea",
-        "validations": [true]
+        "validations": [
+            [true, 'Paragraph text cannot be blank']
+        ]
       },
       {
         "id": 2,
@@ -39,14 +47,15 @@ this.form = {
         "help": "Lets you select from a dropdown list",
         "type": "select",
         "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "validations": [true]
+        "validations": [
+            [true, 'Selection cannot be blank']
+        ]
       },
       {
         "id": "file",
         "label": "File upload",
         "help": "Lets you upload a file",
-        "type": "file",
-        "validations": [true]
+        "type": "file"
       }
     ],
 

@@ -27,9 +27,10 @@ A Field can either be:
     - a unique `id`
     - a `label` describing the field
     - a `help` description. Optional
-    - a `type` that determines how the field is shown (defaults to text). This is a subset of the HTML5 field types:
-        - text, number, checkbox, radio, date, time, file (telephone, url, e-mail, password will be considered too)
-    - `values` for the field. Optional. This could be:
+    - a `type` that determines how the field is shown (defaults to text). This is similar to the HTML5 field types, with the addition of `textarea` and `select`
+        - textarea, select, text, number, checkbox, radio, date, time, file (telephone, url, e-mail, password will be considered too)
+    - a `default` value. Optional. Defaults to blank. For type `checkbox`, this can be a list.
+    - `values` for the field. Required only for types `select`, `radio` and `checkbox`. This could be:
         - a list of values: `[1,2,3]`
         - OR a field from a form: `{"form": "project", "field": "name"}`
         - OR a column number from a view: `{"view": "Projects by name", "field": 0}`
@@ -81,6 +82,9 @@ Reports
 
 Bulk data
 =========
+- Bulk exports
+- Bulk upload of data
+- Feed import
 
 Administration
 ==============

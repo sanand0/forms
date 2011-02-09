@@ -1,4 +1,4 @@
-"form": {
+this.form = {
   "timesheet": {
     "fields": [
       {
@@ -10,6 +10,7 @@
         "id": "date",
         "label": "Date",
         "type": "date",
+        "default": "today",
         "validations": [true]
       },
       {
@@ -22,14 +23,14 @@
       {
         "id": "hours",
         "label": "Hours",
-        "type": "number",
+        "type": "select",
         "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "validations": [true]
-      }
+      },
       {
         "id": "notes",
         "label": "Notes",
-        "type": "text",
+        "type": "text"
       }
     ],
 
@@ -39,7 +40,11 @@
       "read"  : ["all"],
       "create": ["all"],
       "update": ["author","admin"]
-    }
+    },
+
+    // "actions": {
+    //   "submit": "Submit timesheet"
+    // }
   },
 
 
@@ -61,6 +66,7 @@
         "label": "Project status",
         "type": "text",
         "values": ["active", "inactive"]
+      }
     ],
 
     "key": ["project"],
@@ -69,14 +75,19 @@
       "read"  : ["all"],
       "create": ["admin"],
       "update": ["admin"]
+    },
+
+    "actions": {
     }
   }
+
+
 }
 
 /*
 ,
 
-"views": {
+"view": {
   "Projects": {
     "form"   : [ "project" ],
     "fields"  : [
