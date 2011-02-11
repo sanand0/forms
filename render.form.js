@@ -1,5 +1,5 @@
-var qs = require('./node_modules/node-querystring');
-var _ = require('./node_modules/underscore')._;
+var qs = require('querystring');
+var _ = require('underscore')._;
 
 // Render a form in FDL into XHTML
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -86,6 +86,7 @@ this.parseform = function(form, request, callback) {
 
 // Validates form data
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
+// TODO: Should we move validations into CouchDB? This couples tightly with CouchDB...
 var validate = this.validate = function(form, data) {
   var errors = {};
 
@@ -102,7 +103,7 @@ var validate = this.validate = function(form, data) {
         if ((_.isBoolean    (check[0]) && !val) ||
             (_.isRegExp     (check[0]) && !check[0].test(val)) ||
             (_.isArray      (check[0]) && !_.contains(check[0], val)) ||
-            (_.isFunction   (check[0]) && !check[0](val))
+            (_.isFunction   (check[0]) && !check[0](val, data))
         ) {
           report(key, check[1]);
         }
@@ -110,5 +111,5 @@ var validate = this.validate = function(form, data) {
     }
   }
 
-  return errors;
+  return _.isEmpty(errors) ? false : errors;
 };
