@@ -73,6 +73,32 @@ this.simpleform = function(form, data, errors) {
   return html.join('');
 };
 
+// Render a list of docs for a form into XHTML
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+this.simpleview = function(form, docs) {
+  // Basic templates
+  var templates = {
+    // Start and end of a form. TODO: Form action
+    view_header:     '<table><thead><tr><% for (var i=0, field; field=form.fields[i]; i++) { if (field.label) { print("<th>", field.label, "</th>"); } } %></tr></thead><tbody>',
+    doc_row:         '<tr><% for (var i=0, field; field=form.fields[i]; i++) { if (field.label) { print("<td>", doc[field.id], "</td>"); } } %></tr>',
+    view_footer:     '</tbody></table>'
+  };
+
+  // t('template-name', data) renders the template
+  var t = function(template, data) { return _.template(templates[template], data || {}); };
+
+  // html is an array that holds the output
+  var html = [];
+  html.push(t('view_header', {form:form}));
+  for (var i=0, doc; doc=docs[i]; i++) {
+    html.push(t('doc_row', {form:form, doc:doc}));
+  }
+  html.push(t('view_footer', {form:form}));
+
+  return html.join('');
+};
+
+
 // Converts form POST data into a data object and returns it
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 this.parseform = function(form, request, callback) {
@@ -86,7 +112,7 @@ this.parseform = function(form, request, callback) {
 
 // Validates form data
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-// TODO: Should we move validations into CouchDB? This couples tightly with CouchDB...
+// TODO: Move validations into CouchDB
 var validate = this.validate = function(form, data) {
   var errors = {};
 
@@ -113,3 +139,5 @@ var validate = this.validate = function(form, data) {
 
   return _.isEmpty(errors) ? false : errors;
 };
+
+
