@@ -3,9 +3,10 @@ var _ = require('underscore')._;
 
 // Render a form in FDL into XHTML
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-this.simpleform = function(form, data, errors) {
+this.form = function(app, formname, data, errors) {
   data = data || {};
   errors = errors || {};
+  var form = app.form[formname];
 
   // Basic templates
   var templates = {
@@ -75,25 +76,44 @@ this.simpleform = function(form, data, errors) {
 
 // Render a list of docs for a form into XHTML
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-this.simpleview = function(form, docs) {
+this.view = function(app, viewname, docs) {
+  var view = app.view[viewname];
+
   // Basic templates
   var templates = {
     // Start and end of a form. TODO: Form action
     view_header:     '<table><thead><tr><% for (var i=0, field; field=form.fields[i]; i++) { if (field.label) { print("<th>", field.label, "</th>"); } } %></tr></thead><tbody>',
-    doc_row:         '<tr><% for (var i=0, field; field=form.fields[i]; i++) { if (field.label) { print("<td>", doc[field.id], "</td>"); } } %></tr>',
-    view_footer:     '</tbody></table>'
+    view_row_header: '<tr>',
+    view_row_footer: '</tr>',
+    view_row_data:   '<td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.id] %></a></td>',
+    view_footer:     '</tbody></table>',
+    action_header:   '<ul>',
+    action_row:      '<li><a href="/<%= app._name %><%= action.url %>"><%= action.text %></li>',
+    action_footer:   '</ul>'
   };
 
   // t('template-name', data) renders the template
   var t = function(template, data) { return _.template(templates[template], data || {}); };
 
+  var form = app.form[view.form];
+  var fieldlist = _(form.fields).select(function(field) { return field.label });
+
   // html is an array that holds the output
   var html = [];
   html.push(t('view_header', {form:form}));
-  for (var i=0, doc; doc=docs[i]; i++) {
-    html.push(t('doc_row', {form:form, doc:doc}));
-  }
+  _(docs).each(function(doc) {
+    html.push(t('view_row_header'));
+    _(fieldlist).each(function(field) {
+      html.push(t('view_row_data', {app:app, view:view, doc:doc, field:field}));
+    });
+    html.push(t('view_row_footer'));
+  });
+  // _.each(docs, function(doc) { html.push(t('doc_row', {form:form, doc:doc})); });
   html.push(t('view_footer', {form:form}));
+
+  html.push(t('action_header'));
+  _.each(view.actions, function(action) { html.push(t('action_row', {app:app, action:action})); })
+  html.push(t('action_footer'));
 
   return html.join('');
 };
@@ -101,12 +121,18 @@ this.simpleview = function(form, docs) {
 
 // Converts form POST data into a data object and returns it
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-this.parseform = function(form, request, callback) {
+this.parseform = function(app, form, request, callback) {
   var data = '';
   request.setEncoding('utf8');
   request.addListener('data', function(chunk) { data += chunk; });
   request.addListener('end', function() {
-    callback(data ? qs.parse(data) : {});
+    var json = data ? qs.parse(data) : {};
+
+    // Add metadata. TODO: author, history
+    json[':form'] = form;
+    json[':updated'] = new Date();
+
+    callback(json);
   });
 };
 

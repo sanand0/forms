@@ -13,6 +13,19 @@ Sample applications:
 - Surveys
 - Exams
 
+Creating an application
+=======================
+Create a folder with index.js, a JSON file that looks like this:
+
+    { 'form': [ ... a list of forms -- see below ],
+      'view': [ ... a list of views -- see below ],
+      'template': 'html-file-to-use-as-a-template.html' }
+
+This will create the following URLs:
+    - `/:app/:form`     : Show form (to create new form)
+    - `/:app/:form/:id` : Show existing document
+    - `/:app/:view`     : Show view
+
 Forms
 ========
 A Form is a list of Fields and Permissions.
