@@ -1,7 +1,29 @@
 var qs = require('querystring');
 var _ = require('underscore')._;
 
-// Render a form in FDL into XHTML
+// Render a home page of an app
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+this.home = function(app) {
+  var html = [];
+
+  // Display all forms
+  html.push('<h2>Forms</h2><ul>');
+  _(app.form).each(function(form, name) {
+    html.push(_.template('<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>', {app: app, name:name}));
+  });
+  html.push('</ul>');
+
+  // Display all views
+  html.push('<h2>Views</h2><ul>');
+  _(app.view).each(function(view, name) {
+    html.push(_.template('<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>', {app: app, name:name}));
+  });
+  html.push('</ul>');
+
+  return html.join('');
+};
+
+// Render a form in FDL
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 this.form = function(app, formname, data, errors) {
   data = data || {};
@@ -10,7 +32,7 @@ this.form = function(app, formname, data, errors) {
 
   // Basic templates
   var templates = {
-    // Start and end of a form. TODO: Form action
+    // Start and end of a form.
     form_start:     '<form method="post">',
     form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>',
 
@@ -26,13 +48,16 @@ this.form = function(app, formname, data, errors) {
 
     // Field definitions for various field types. `input` is the generic catch-all
     input:          '<input name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>" value="<%= val %>"/>',
-    radio:          '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", v === val ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
-    checkbox:       '<% for (var v in field.values) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", v, "\'", val.indexOf(v) >= 0 ? " checked=\'checked\'" : "", " />", v, "</label>"); } %>',
+    radio:          '<% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", values[i], "\'", values[i] === val ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %>',
+    checkbox:       '<% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", values[i], "\'", val.indexOf(values[i]) >= 0 ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %>',
     textarea:       '<textarea name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>"><%= val %></textarea>',
-    select:         '<select name="<%= field.id %>" id="<%= field.id %>"><% for (var v in field.values) { print("<option", v==val ? " selected=\'selected\'" : "", ">", v, "</option>"); } %></select>',
+    select:         '<select name="<%= field.id %>" id="<%= field.id %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select>',
 
     // Error messages
-    error:          '<span class="error"> <%= msg %></span>'
+    error:          '<span class="error"> <%= msg %></span>',
+
+    // Hidden fields
+    hidden:         '<input type="hidden" name="_id" value="<%= _id %>"/><input type="hidden" name="_rev" value="<%= _rev %>"/>'
   };
 
   // t('template-name', data) renders the template
@@ -42,6 +67,7 @@ this.form = function(app, formname, data, errors) {
   var html = [];
 
   html.push(t('form_start', {form:form}));
+  if (data && data._id) { html.push(t('hidden', data)); }
   for (var i=0, field; field=form.fields[i]; i++) {
     // Fields can be either a input definition or a section definition.
     // If it's an input definition...
@@ -51,7 +77,12 @@ this.form = function(app, formname, data, errors) {
 
       // Pick the right template and use it
       var tmpl = templates[field.type] ? field.type : 'input',
-          param = {field:field, val: data[field.id] || field.default || '', error:errors[field.id]};
+          param = {
+            field:field,
+            val: data[field.id] || field.default || '',
+            values: (field.values && field.values.form && field.values.field) ? app._lookup(field.values.form, field.values.field) : field.values,
+            error:errors[field.id]
+          };
       html.push(t('field_start', param));
       html.push(t(tmpl, param));
       _.each(param.error, function(e) { html.push(t('error', {msg:e})); });
@@ -81,14 +112,13 @@ this.view = function(app, viewname, docs) {
 
   // Basic templates
   var templates = {
-    // Start and end of a form. TODO: Form action
     view_header:     '<table><thead><tr><% for (var i=0, field; field=form.fields[i]; i++) { if (field.label) { print("<th>", field.label, "</th>"); } } %></tr></thead><tbody>',
-    view_row_header: '<tr>',
-    view_row_footer: '</tr>',
-    view_row_data:   '<td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.id] %></a></td>',
+     view_row_header: '<tr>',
+      view_row_data:   '<td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.id] %></a></td>',
+     view_row_footer: '</tr>',
     view_footer:     '</tbody></table>',
     action_header:   '<ul>',
-    action_row:      '<li><a href="/<%= app._name %><%= action.url %>"><%= action.text %></li>',
+     action_row:      '<li><a href="/<%= app._name %><%= action.url %>"><%= action.text %></li>',
     action_footer:   '</ul>'
   };
 
@@ -138,26 +168,29 @@ this.parseform = function(app, form, request, callback) {
 
 // Validates form data
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-// TODO: Move validations into CouchDB
-var validate = this.validate = function(form, data) {
+this.validate = function(app, formname, data) {
   var errors = {};
+  var form = app.form[formname];
 
-  var report = function(field, msg) {
+  // Report an error on a field, stating a message
+  var report_error = function(field, msg) {
     if (!errors[field]) { errors[field] = []; }
     errors[field].push(msg);
   };
 
+  // Check for validations on each field
   for (var i=0, field; field=form.fields[i]; i++) {
     if (field.validations) {
       var key = field.id,
           val = data[key];
+      // Perform each validation
       for (var j=0, check; check=field.validations[j]; j++) {
         if ((_.isBoolean    (check[0]) && !val) ||
             (_.isRegExp     (check[0]) && !check[0].test(val)) ||
             (_.isArray      (check[0]) && !_.contains(check[0], val)) ||
             (_.isFunction   (check[0]) && !check[0](val, data))
         ) {
-          report(key, check[1]);
+          report_error(key, check[1]);
         }
       }
     }
@@ -165,5 +198,4 @@ var validate = this.validate = function(form, data) {
 
   return _.isEmpty(errors) ? false : errors;
 };
-
 

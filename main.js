@@ -9,16 +9,11 @@ var cradle = require('cradle');         // CouchDB connection
 var connect = require('connect');       // URL routing and middleware
 
 // Local libraries
-var render = require('./render.form.js');
-
+var render = require('./render.js');
 
 // Connect to the database. TODO: On failure...
-var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
-// var couch = new(cradle.Connection)();
-var db = couch.database('sample');
-db.exists(function(err, exists) {
-  if (!exists) { db.create(); }
-});
+// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
+var couch = new(cradle.Connection)();
 
 
 // Load the App
@@ -40,10 +35,36 @@ function loadApp(folder) {
       };
   })();
 
+  app.db = couch.database(app.database || 'sample');
+  app.db.exists(function(err, exists) {
+    if (!exists) { app.db.create(); }
+  });
+
+  // Post process forms
+  var lookups = {};
+  _(app.form).each(function(form, name) {
+    // Process each field
+    _(form.fields).each(function(field) {
+      // Identify all fields looked up by this field
+      if (field.values && field.values.form && field.values.field) {
+        lookups[field.values.form + '/' + field.values.field] = 1;
+      }
+
+      // Change all strings in validations to compiled RegExps. So
+      // "validations": [ ["/^A/i", "Text must start with A"] ] becomes
+      // "validations": [ [/^A/i, "Text must start with A"] ]
+      _(field.validations).each(function(validation) {
+        if (_.isString(validation[0]) && validation[0][0] == '/') {
+          validation[0] = eval(validation[0]);
+        }
+      });
+    });
+  });
+
   // Create the design documents for the views
   var map_field = 'function(doc) { if (doc[":form"] == "<%= form %>") { emit(doc["<%= field %>"], doc._id); } }';
-  _.each(_.values(app.view), function(view) {
-    db.save('_design/' + view.form,
+  _.each(app.view, function(view, name) {
+    app.db.save('_design/' + view.form,
       _.reduce(view.fields, function(design, field) {
         design[field.id] = { "map": _.template(map_field, { form: view.form, field: field.id }) };
         return design;
@@ -51,7 +72,32 @@ function loadApp(folder) {
     );
   });
 
-  // TODO: Change all strings in validations to compiled RegExps
+  // Create a design document for looking up values.
+  app.db.save('_design/lookup',
+     _.reduce(lookups, function(design, val, formfield) {
+       var pair = formfield.split('/');
+       design[formfield] = { "map": _.template(map_field, { form: pair[0], field: pair[1] }) };
+       return design;
+     }, {})
+  );
+
+  // Helper function for lookups. app._lookup(form, field) -> list of values
+  // TODO: make this synchronous
+  app._lookup = (function() {
+    var cache = {};
+
+    return function (form, field) {
+      var key = form + '/' + field;
+      app.db.view(key, function(err, data) {
+        cache[key] = _(data).pluck('key');
+      });
+      return cache[key] || [];
+    };
+  })();
+
+  // Initialise lookups
+  _(lookups).each(function(val, key) { var pair = key.split('/'); app._lookup(pair[0], pair[1]); });
+
   return app;
 }
 
@@ -68,20 +114,31 @@ function main_handler(router) {
     if (app) {
         response.end(app._render(data));
     } else {
-      response.end('No such application found');
+      response.end(data || "");
     }
   };
 
-  router.get('/:app/:cls?/:id?', function(request, response, next) {
+  router.get('/:app?/:cls?/:id?', function(request, response, next) {
     // Ensure that app exists
     var app = App[request.params.app];
-    if (!app) { return write(404, app, response, {body:'No such app'}); }
+    if (!app) {
+      if (request.params.app) { write(404, null, response, 'No such app'); }
+      else {
+        // TODO: Need a global app of apps
+        write(200, null, response, '<h1>Apps</h1><ul>' + _.map(App, function(app, name) { return '<li><a href="/' + name + '">' + name + '</a></li>'; }).join('<br>'));
+      }
+    }
+
+    // Display home page
+    else if (!request.params.cls) {
+      write(200, app, response, {body: render.home(app)});
+    }
 
     // Display form
-    if (app.form && app.form[request.params.cls]) {
+    else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
-        db.get(request.params.id, function(err, doc) {
+        app.db.get(request.params.id, function(err, doc) {
           write(200, app, response, {body:render.form(app, request.params.cls, doc)});
         });
       } else {
@@ -94,8 +151,8 @@ function main_handler(router) {
       var view = app.view[request.params.cls];
       var field = request.params.id;
       if (!field || _.indexOf(_.pluck(view.fields, 'id'), field) < 0) { field = view.fields[0].id; }
-      db.view(view.form + '/' + field, function(err, data) {
-        db.get(_.pluck(data, 'value'), function(err, docs) {
+      app.db.view(view.form + '/' + field, function(err, data) {
+        app.db.get(_.pluck(data, 'value'), function(err, docs) {
           write(200, app, response, {body:render.view(app, request.params.cls, _.pluck(docs, 'doc'))});
         });
       });
@@ -112,7 +169,7 @@ function main_handler(router) {
     }
 
     else {
-      write(404, app, response, {body:'No such URL.\nApp: ' + request.params.app + '\nType: ' + request.params.cls + '\nID: ' + request.params.id});
+      write(404, app, response, {body:'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id});
     }
   });
 
@@ -129,16 +186,15 @@ function main_handler(router) {
 
       response.writeHead(200, {'Content-Type': 'text/html'});
       render.parseform(app, request.params.cls, request, function(data) {
-        errors = render.validate(form, data);
+        errors = render.validate(app, request.params.cls, data);
         if (!errors) {
-          db.save(data, function(err, res) {
+          app.db.save(data, function(err, res) {
             if (!err) {
               var url = (form.actions && form.actions.onSubmit) ? form.actions.onSubmit : '/' + request.params.cls;
               response.writeHead(302, { 'Location': '/' + app._name + url });
               response.end();
             } else {
-              // TODO: error handling
-              console.log(err);
+              write(400, app, response, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
             }
           });
         } else {
@@ -161,7 +217,12 @@ console.log('Server started');
 
 /*
 TODO:
-- make app a module. app.load, app.router, etc
-    - pre-process validations on load
-- rename render.form.js to render.js. Allow for generic "parser event"-based renderings
+/ view lookups
+- bind render to app
+
+1. Handle dates properly [target: Tue]
+/ Allow list of projects to be editable [target: Wed]
+3. Add authentication [target: Thu]
+4. Add export functionality [target: Fri]
+
 */
