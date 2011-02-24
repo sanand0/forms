@@ -168,6 +168,22 @@ function main_handler(router) {
       );
     }
 
+    // Handle administration functions under /:app/_admin
+    else if (request.params.cls == '_admin') {
+      if (request.params.id == 'deletedata') {
+        write(200, app, response, {body: 'TODO: Deleting data'});
+      }
+
+      else if (request.params.id == 'reload') {
+        App[request.params.app] = loadApp(request.params.app);
+        write(200, app, response, {body: 'Application reloaded: <a href="/">Home</a>'});
+      }
+
+      else {
+        write(404, app, response, {body: 'No such admin command'});
+      }
+    }
+
     else {
       write(404, app, response, {body:'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id});
     }
@@ -217,7 +233,7 @@ console.log('Server started');
 
 /*
 TODO:
-/ view lookups
+/ Added view lookups and home pages
 - bind render to app
 
 1. Handle dates properly [target: Tue]
