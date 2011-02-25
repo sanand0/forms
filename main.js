@@ -118,19 +118,39 @@ function main_handler(router) {
     }
   };
 
-  router.get('/:app?/:cls?/:id?', function(request, response, next) {
-    // Ensure that app exists
+  var get_app = function(request, response, next) {
     var app = App[request.params.app];
     if (!app) {
-      if (request.params.app) { write(404, null, response, 'No such app'); }
+      if (request.params.app) {
+        write(404, null, response, 'No such app');
+      }
       else {
         // TODO: Need a global app of apps
         write(200, null, response, '<h1>Apps</h1><ul>' + _.map(App, function(app, name) { return '<li><a href="/' + name + '">' + name + '</a></li>'; }).join('<br>'));
       }
     }
+    return app;
+  };
+
+  router.get('/:app?/static/*', function(request, response, next) {
+    var app = get_app(request, response, next);
+    if (!app) { return; }
+
+    app._staticProvider(request, response,
+      // If there's no such file, report an error to avoid following through
+      function() {
+        write(404, app, response, {body:'No such static file: ' + request.url});
+      }
+    );
+  });
+
+  router.get('/:app?/:cls?/:id?', function(request, response, next) {
+    // Ensure that app exists
+    var app = get_app(request, response, next);
+    if (!app) { return; }
 
     // Display home page
-    else if (!request.params.cls) {
+    if (!request.params.cls) {
       write(200, app, response, {body: render.home(app)});
     }
 
@@ -156,16 +176,6 @@ function main_handler(router) {
           write(200, app, response, {body:render.view(app, request.params.cls, _.pluck(docs, 'doc'))});
         });
       });
-    }
-
-    // Display static content
-    else if (request.params.cls == 'static') {
-      app._staticProvider(request, response,
-        // If there's no such file, report an error to avoid following through
-        function() {
-          write(404, app, response, {body:'No such static file: ' + request.url});
-        }
-      );
     }
 
     // Handle administration functions under /:app/_admin
