@@ -30,6 +30,8 @@ Forms
 ========
 A Form is a list of Fields and Permissions.
 
+When in doubt, follow http://neyric.github.com/inputex/
+
 A Field can either be:
 
 1. a section header, in which case it has:

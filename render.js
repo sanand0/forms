@@ -1,4 +1,3 @@
-var qs = require('querystring');
 var _ = require('underscore')._;
 
 // An accumulative template
@@ -27,17 +26,65 @@ _.Template = function(templates, global) {
   };
 };
 
+
+Renderer = { home: {}, form: {}, view: {} };
+
+Renderer.home.html = {
+  'form_start':   '<h2>Forms</h2><ul>',
+   'form':        '<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>',
+  'form_end':     '</ul>',
+  'view_start':   '<h2>Views</h2><ul>',
+   'view':        '<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>',
+  'view_end':     '</ul>'
+};
+
+Renderer.form.html = {
+    form_start:     '<form method="post">',
+     doc_ref:       '<input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/>',
+     section_start: '<div class="section" id="<%= field.name %>"><h2><%= field.section %></h2><p><%= field.description %></p><fieldset><dl>',
+      label:        '<dt class="<%= error ? "error" : "" %>"><label for="<%= field.name %>"><%= field.label %></label><% if (field.description) { print("<p>", field.description, "</p>") } %></dt>',
+      input:        '<dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" value="<%= val %>"/></dd>',
+      radio:        '<dd><% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.name, "\' value=\'", values[i], "\'", values[i] === val ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %></dd>',
+      checkbox:     '<dd><% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.name, "\' value=\'", values[i], "\'", val.indexOf(values[i]) >= 0 ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %></dd>',
+      textarea:     '<dd><textarea name="<%= field.name %>" id="<%= field.name %>" type="<%= field.type || "text" %>"><%= val %></textarea></dd>',
+      select:       '<dd><select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select></dd>',
+
+      error:        '<span class="error"> <%= msg %></span>',
+     section_end:    '</dl></fieldset></div>',
+    form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>'
+};
+
+Renderer.view.html = {
+  view_start:         '<form method="post"><table>',
+
+   view_head_start:   '<thead><tr><th></th>',
+    view_head:        '<th><%= field.label %></th>',
+   view_head_end:     '</tr></thead><tbody>',
+
+   view_row_start:    '<tr><td><input name="<%= doc._id %>" type="checkbox"</td>',
+    view_row:         '<td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.name] %></a></td>',
+   view_row_end:      '</tr>',
+
+  view_end:           '</tbody></table>',
+
+  delete_action:      '<button name="delete" type="submit">Delete</button>',
+  action_start:       '<ul>',
+   action_row:        '<li><a href="/<%= app._name %><%= action.url %>"><%= action.text %></li>',
+  action_end:         '</ul></form>'
+};
+
+Renderer.view.csv = {
+   view_head:         '<%= field.label %>,',
+   view_head_end:     '\n',
+   view_row:          '<%= doc[field.name] %>,',
+   view_row_end:      '\n'
+};
+
+
 // Render a home page of an app
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 this.home = function(app) {
-  var t = new _.Template({
-    'form_start':   '<h2>Forms</h2><ul>',
-     'form':        '<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>',
-    'form_end':     '</ul>',
-    'view_start':   '<h2>Views</h2><ul>',
-     'view':        '<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>',
-    'view_end':     '</ul>'
-  }, { app: app }).t;
+  var t = new _.Template(Renderer.home.html, { app: app }).t;
 
   t('form_start');
   _(app.form).each(function(form, name) { t('form', {form:form, name:name}); });
@@ -55,21 +102,7 @@ this.form = function(app, formname, data, errors) {
   data = data || {};
   errors = errors || {};
   var global = { app: app, form: app.form[formname] };
-  var templates = {
-    form_start:     '<form method="post">',
-     doc_ref:       '<input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="doc._rev" value="<%= doc._rev %>"/>',
-     section_start: '<div class="section" id="<%= field.id %>"><h2><%= field.section %></h2><p><%= field.help %></p><fieldset><dl>',
-      label:        '<dt class="<%= error ? "error" : "" %>"><label for="<%= field.id %>"><%= field.label %></label><% if (field.help) { print("<p>", field.help, "</p>") } %></dt>',
-      input:        '<dd><input name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>" value="<%= val %>"/></dd>',
-      radio:        '<dd><% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", values[i], "\'", values[i] === val ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %></dd>',
-      checkbox:     '<dd><% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.id, "\' value=\'", values[i], "\'", val.indexOf(values[i]) >= 0 ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %></dd>',
-      textarea:     '<dd><textarea name="<%= field.id %>" id="<%= field.id %>" type="<%= field.type || "text" %>"><%= val %></textarea></dd>',
-      select:       '<dd><select name="<%= field.id %>" id="<%= field.id %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select></dd>',
-
-      error:        '<span class="error"> <%= msg %></span>',
-     section_end:    '</dl></fieldset></div>',
-    form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>'
-  };
+  var templates = Renderer.form.html;
   var t = new _.Template(templates, global).t;
 
   t('form_start');
@@ -80,11 +113,11 @@ this.form = function(app, formname, data, errors) {
       t('section_start', {field: field.section ? field : {} });
     }
     if (field.label) {
-      var err = errors[field.id];
+      var err = errors[field.name];
       t('label', {
         field: field,
         error: err,
-        val: data[field.id] || field.default || '',
+        val: data[field.name] || field.default || '',
         values: (field.values && field.values.form && field.values.field) ? app._lookup(field.values.form, field.values.field) : field.values
       });
       t(templates[field.type] ? field.type : 'input');
@@ -107,23 +140,7 @@ this.view = function(app, viewname, docs) {
   };
 
   // Basic templates
-  var t = new _.Template({
-    view_start:         '<table>',
-
-     view_head_start:   '<thead><tr>',
-      view_head:        '<th><%= field.label %></th>',
-     view_head_end:     '</tr></thead><tbody>',
-
-     view_row_start:    '<tr>',
-      view_row:         '<td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.id] %></a></td>',
-     view_row_end:      '</tr>',
-
-    view_end:           '</tbody></table>',
-
-    action_start:   '<ul>',
-     action_row:      '<li><a href="/<%= app._name %><%= action.url %>"><%= action.text %></li>',
-    action_end:   '</ul>'
-  }, global).t;
+  var t = new _.Template(Renderer.view[global.view.renderer || 'html'], global).t;
 
   // Pick the fields that have labels
   var fieldlist = _(global.form.fields).select(function(field) { return field.label });
@@ -140,6 +157,7 @@ this.view = function(app, viewname, docs) {
   });
   t('view_end');
 
+  t('delete_action');
   t('action_start');
   _.each(global.view.actions, function(action) { t('action_row', {action:action}); })
   t('action_end');
@@ -147,23 +165,6 @@ this.view = function(app, viewname, docs) {
   return t().join('');
 };
 
-
-// Converts form POST data into a data object and returns it
-// ------------------------------------------------------------------------------------------------------------------------------------------------------
-this.parseform = function(app, form, request, callback) {
-  var data = '';
-  request.setEncoding('utf8');
-  request.addListener('data', function(chunk) { data += chunk; });
-  request.addListener('end', function() {
-    var json = data ? qs.parse(data) : {};
-
-    // Add metadata. TODO: author, history
-    json[':form'] = form;
-    json[':updated'] = new Date();
-
-    callback(json);
-  });
-};
 
 // Validates form data
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -180,7 +181,7 @@ this.validate = function(app, formname, data) {
   // Check for validations on each field
   for (var i=0, field; field=form.fields[i]; i++) {
     if (field.validations) {
-      var key = field.id,
+      var key = field.name,
           val = data[key];
       // Perform each validation
       for (var j=0, check; check=field.validations[j]; j++) {

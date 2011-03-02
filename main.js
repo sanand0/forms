@@ -5,16 +5,16 @@ var path = require('path');
 
 // Third-party node modules
 var _ = require('underscore')._;        // Functional programming & templates
+var mime = require('mime');             // Mime types
 var cradle = require('cradle');         // CouchDB connection
 var connect = require('connect');       // URL routing and middleware
 
 // Local libraries
 var render = require('./render.js');
 
-// Connect to the database. TODO: On failure...
+// Connect to the database.
 // var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
 var couch = new(cradle.Connection)();
-
 
 // Load the App
 // ------------
@@ -24,15 +24,20 @@ function loadApp(folder) {
 
   // We then add a few variables and functions to it
   app._name = folder;
-  app._staticProvider = connect.staticProvider();
   app._render = (function() {
-      var template = fs.readFileSync(path.join(folder, app.template), 'utf-8');
-      var defaults = {
-        static_url: function(path) { return '/' + app._name + '/static/' + path; }
-      };
-      return function(params) {
-        return _.template(template, _.extend({}, defaults, params));
-      };
+    var templateCache = {};
+    var defaults = {
+      static_url: function(path) { return '/' + app._name + '/static/' + path; }
+    };
+    return function(response, code, params, templatename) {
+      templatename = templatename || app.template || 'index.html';
+      var template = templateCache[templatename];
+      if (!template) {
+        template = templateCache[templatename] = fs.readFileSync(path.join(folder, templatename), 'utf-8');
+      }
+      response.writeHead(code, {'Content-Type': mime.lookup(templatename, 'text/html')});
+      response.end(_.template(template, _.extend({}, defaults, params)));
+    };
   })();
 
   app.db = couch.database(app.database || 'sample');
@@ -66,7 +71,7 @@ function loadApp(folder) {
   _.each(app.view, function(view, name) {
     app.db.save('_design/' + view.form,
       _.reduce(view.fields, function(design, field) {
-        design[field.id] = { "map": _.template(map_field, { form: view.form, field: field.id }) };
+        design[field.name] = { "map": _.template(map_field, { form: view.form, field: field.name }) };
         return design;
         }, {})
     );
@@ -82,13 +87,12 @@ function loadApp(folder) {
   );
 
   // Helper function for lookups. app._lookup(form, field) -> list of values
-  // TODO: make this synchronous
   app._lookup = (function() {
     var cache = {};
-
     return function (form, field) {
       var key = form + '/' + field;
       app.db.view(key, function(err, data) {
+        if (err) { console.log(err, data); }
         cache[key] = _(data).pluck('key');
       });
       return cache[key] || [];
@@ -109,49 +113,24 @@ var App = {
 // Main URL handler
 // ----------------
 function main_handler(router) {
-  var write = function(code, app, response, data) {
-    response.writeHead(code, {'Content-Type': 'text/html'});
-    if (app) {
-        response.end(app._render(data));
-    } else {
-      response.end(data || "");
-    }
-  };
-
-  var get_app = function(request, response, next) {
-    var app = App[request.params.app];
-    if (!app) {
-      if (request.params.app) {
-        write(404, null, response, 'No such app');
-      }
-      else {
-        // TODO: Need a global app of apps
-        write(200, null, response, '<h1>Apps</h1><ul>' + _.map(App, function(app, name) { return '<li><a href="/' + name + '">' + name + '</a></li>'; }).join('<br>'));
-      }
-    }
-    return app;
-  };
-
-  router.get('/:app?/static/*', function(request, response, next) {
-    var app = get_app(request, response, next);
-    if (!app) { return; }
-
-    app._staticProvider(request, response,
-      // If there's no such file, report an error to avoid following through
-      function() {
-        write(404, app, response, {body:'No such static file: ' + request.url});
-      }
-    );
+  router.get('/', function(request, response, next) {
+    response.writeHead(200, {'Content-Type': 'text/html'});
+    response.end('<h1>Apps</h1><ul>' + _.map(App, function(app, name) { return '<li><a href="/' + name + '">' + name + '</a></li>'; }).join('<br>'));
   });
 
-  router.get('/:app?/:cls?/:id?', function(request, response, next) {
-    // Ensure that app exists
-    var app = get_app(request, response, next);
+  router.get('/:app/static/*', function(request, response, next) {
+    var app = App[request.params.app];
+    if (!app) { return; }
+    connect.static.send(request, response, next, { root: __dirname, path: request.url });
+  });
+
+  router.get('/:app/:cls?/:id?', function(request, response, next) {
+    var app = App[request.params.app];
     if (!app) { return; }
 
     // Display home page
     if (!request.params.cls) {
-      write(200, app, response, {body: render.home(app)});
+      app._render(response, 200, {body: render.home(app)});
     }
 
     // Display form
@@ -159,10 +138,10 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
-          write(200, app, response, {body:render.form(app, request.params.cls, doc)});
+          app._render(response, 200, {body:render.form(app, request.params.cls, doc)});
         });
       } else {
-          write(200, app, response, {body:render.form(app, request.params.cls, {})});
+          app._render(response, 200, {body:render.form(app, request.params.cls, {})});
       }
     }
 
@@ -170,32 +149,32 @@ function main_handler(router) {
     else if (app.view && app.view[request.params.cls]) {
       var view = app.view[request.params.cls];
       var field = request.params.id;
-      if (!field || _.indexOf(_.pluck(view.fields, 'id'), field) < 0) { field = view.fields[0].id; }
+      if (!field || _.indexOf(_.pluck(view.fields, 'name'), field) < 0) { field = view.fields[0].name; }
       app.db.view(view.form + '/' + field, function(err, data) {
         app.db.get(_.pluck(data, 'value'), function(err, docs) {
-          write(200, app, response, {body:render.view(app, request.params.cls, _.pluck(docs, 'doc'))});
+          app._render(response, 200, {body:render.view(app, request.params.cls, _.pluck(docs, 'doc'))}, view.template);
         });
       });
     }
 
     // Handle administration functions under /:app/_admin
     else if (request.params.cls == '_admin') {
-      if (request.params.id == 'deletedata') {
-        write(200, app, response, {body: 'TODO: Deleting data'});
+      if (request.params.id == 'delete') {
+        app._render(response, 200, {body: 'TODO: Deleting data'});
       }
 
       else if (request.params.id == 'reload') {
         App[request.params.app] = loadApp(request.params.app);
-        write(200, app, response, {body: 'Application reloaded: <a href="/">Home</a>'});
+        app._render(response, 200, {body: 'Application reloaded: <a href="/">Home</a>'});
       }
 
       else {
-        write(404, app, response, {body: 'No such admin command'});
+        app._render(response, 404, {body: 'No such admin command'});
       }
     }
 
     else {
-      write(404, app, response, {body:'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id});
+      app._render(response, 404, {body:'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id});
     }
   });
 
@@ -205,27 +184,43 @@ function main_handler(router) {
   router.post('/:app/:cls?/:id?', function(request, response, next) {
     // Ensure that app exists
     var app = App[request.params.app];
-    if (!app) { return write(404, app, response, {body:'No such app'}); }
+    if (!app) { return; }
 
     if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
 
       response.writeHead(200, {'Content-Type': 'text/html'});
-      render.parseform(app, request.params.cls, request, function(data) {
-        errors = render.validate(app, request.params.cls, data);
-        if (!errors) {
-          app.db.save(data, function(err, res) {
-            if (!err) {
-              var url = (form.actions && form.actions.onSubmit) ? form.actions.onSubmit : '/' + request.params.cls;
-              response.writeHead(302, { 'Location': '/' + app._name + url });
-              response.end();
-            } else {
-              write(400, app, response, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
-            }
-          });
-        } else {
-          response.end(app._render({body:render.form(app, request.params.cls, data, errors)}));
+      var data = request.body;
+      // Add metadata. TODO: author, history
+      data[':form'] = request.params.cls;
+      data[':updated'] = new Date();
+
+      errors = render.validate(app, request.params.cls, data);
+      if (!errors) {
+        app.db.save(data, function(err, res) {
+          if (!err) {
+            var url = (form.actions && form.actions.onSubmit) ? form.actions.onSubmit : '/' + request.params.cls;
+            response.writeHead(302, { 'Location': '/' + app._name + url });
+            response.end();
+          } else {
+            console.log(data);
+            app._render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+          }
+        });
+      } else {
+        app._render(200, response, {body:render.form(app, request.params.cls, data, errors)});
+      }
+    }
+
+    if (app.view && app.view[request.params.cls]) {
+      var view = app.view[request.params.cls];
+
+      response.writeHead(200, {'Content-Type': 'text/html'});
+      parsebody(request, function(data) {
+        if (typeof data['delete'] !== 'undefined') {
+          // Todo: delete
         }
+        response.end('Got the request: ' + JSON.stringify(data));
       });
     }
   });
@@ -233,22 +228,9 @@ function main_handler(router) {
 }
 
 
-var server = connect.createServer(
+var server = connect(
+  connect.bodyParser(),
   connect.router(main_handler)
-);
+).listen(8401);
 
-server.listen(8401);
 console.log('Server started');
-
-
-/*
-TODO:
-/ Added view lookups and home pages
-- bind render to app
-
-1. Handle dates properly [target: Tue]
-/ Allow list of projects to be editable [target: Wed]
-3. Add authentication [target: Thu]
-4. Add export functionality [target: Fri]
-
-*/
