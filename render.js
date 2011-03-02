@@ -16,12 +16,13 @@ var _ = require('underscore')._;
 // 3. Returns the results array
 _.Template = function(templates, global) {
   var that = this;
-  that.templates = templates;
+  // Pre-compile the templates. TODO: This isn't really a useful optimisation.
+  that.templatecache = _(templates).reduce(function(memo, val, key) { memo[key] = _.template(val); return memo; }, {});
   that.global = global || {};
   that.result = [];
   that.t = function(name, data) {
     if (data) { _.extend(global, data); }
-    if (name && that.templates[name]) { that.result.push(_.template(that.templates[name], global)); }
+    if (name && that.templatecache[name]) { that.result.push(that.templatecache[name](global)); }
     return that.result;
   };
 };
@@ -40,7 +41,7 @@ Renderer.home.html = {
 
 Renderer.form.html = {
     form_start:     '<form method="post">',
-     doc_ref:       '<input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/>',
+     _doc_ref:      '<input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/>',
      section_start: '<div class="section" id="<%= field.name %>"><h2><%= field.section %></h2><p><%= field.description %></p><fieldset><dl>',
       label:        '<dt class="<%= error ? "error" : "" %>"><label for="<%= field.name %>"><%= field.label %></label><% if (field.description) { print("<p>", field.description, "</p>") } %></dt>',
       input:        '<dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" value="<%= val %>"/></dd>',
@@ -61,7 +62,8 @@ Renderer.view.html = {
     view_head:        '<th><%= field.label %></th>',
    view_head_end:     '</tr></thead><tbody>',
 
-   view_row_start:    '<tr><td><input name="<%= doc._id %>" type="checkbox"</td>',
+   view_row_start:    '<tr>',
+    _doc_ref:         '<td><input name="doc:<%= doc._id %>:<%= doc._rev %>" type="checkbox"></td>',
     view_row:         '<td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.name] %></a></td>',
    view_row_end:      '</tr>',
 
@@ -106,7 +108,7 @@ this.form = function(app, formname, data, errors) {
   var t = new _.Template(templates, global).t;
 
   t('form_start');
-  if (data && data._id) { t('doc_ref', {doc:data}); }
+  if (data && data._id) { t('_doc_ref', {doc:data}); }
   _(global.form.fields).each(function(field, index) {
     if (field.section || index === 0) {
       if (index > 0) { t('section_end'); }
@@ -152,6 +154,7 @@ this.view = function(app, viewname, docs) {
 
   _(docs).each(function(doc) {
     t('view_row_start', {doc:doc});
+    t('_doc_ref', {doc:doc});
     _(fieldlist).each(function(field) { t('view_row', {field:field}); });
     t('view_row_end', global);
   });

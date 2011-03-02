@@ -118,3 +118,17 @@ Platform
 ========
 - Node.js on the server side (since server-side validations are required)
 - CouchDB for the database (since a flexible column store is required)
+
+TODO
+====
+- --Delete--
+- History
+- Multiedit
+- Better templating engine: inheritence, events
+- Sort
+- Auth
+- Search
+- Reports
+- Related views (e.g. projects for a user, recent projects, etc)
+- Approval process
+- Email integration

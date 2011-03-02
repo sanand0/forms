@@ -13,8 +13,8 @@ var connect = require('connect');       // URL routing and middleware
 var render = require('./render.js');
 
 // Connect to the database.
-// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
-var couch = new(cradle.Connection)();
+// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80,{cache: true});
+var couch = new(cradle.Connection)({cache: true});
 
 // Load the App
 // ------------
@@ -30,7 +30,7 @@ function loadApp(folder) {
       static_url: function(path) { return '/' + app._name + '/static/' + path; }
     };
     return function(response, code, params, templatename) {
-      templatename = templatename || app.template || 'index.html';
+      templatename = app.template[templatename || 'default'] || 'index.html';
       var template = templateCache[templatename];
       if (!template) {
         template = templateCache[templatename] = fs.readFileSync(path.join(folder, templatename), 'utf-8');
@@ -138,10 +138,10 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
-          app._render(response, 200, {body:render.form(app, request.params.cls, doc)});
+          app._render(response, 200, {body:render.form(app, request.params.cls, doc)}, form.template);
         });
       } else {
-          app._render(response, 200, {body:render.form(app, request.params.cls, {})});
+          app._render(response, 200, {body:render.form(app, request.params.cls, {})}, form.template);
       }
     }
 
@@ -199,8 +199,8 @@ function main_handler(router) {
       if (!errors) {
         app.db.save(data, function(err, res) {
           if (!err) {
-            var url = (form.actions && form.actions.onSubmit) ? form.actions.onSubmit : '/' + request.params.cls;
-            response.writeHead(302, { 'Location': '/' + app._name + url });
+            var url = (form.actions && form.actions.onSubmit) ? '/' + app._name + form.actions.onSubmit : request.url;
+            response.writeHead(302, { 'Location': url });
             response.end();
           } else {
             console.log(data);
@@ -215,13 +215,26 @@ function main_handler(router) {
     if (app.view && app.view[request.params.cls]) {
       var view = app.view[request.params.cls];
 
-      response.writeHead(200, {'Content-Type': 'text/html'});
-      parsebody(request, function(data) {
-        if (typeof data['delete'] !== 'undefined') {
-          // Todo: delete
-        }
-        response.end('Got the request: ' + JSON.stringify(data));
-      });
+      var data = request.body;
+      if (typeof data['delete'] !== 'undefined') {
+        _(data).each(function(val, key) {
+          var parts = key.split(':');
+          if (parts[0] == 'doc') {
+            app.db.remove(parts[1], parts[2], function(err, data) {
+              if (!err) {
+                var url = (view.actions && view.actions.onDelete) ? '/' + app._name + view.actions.onDelete : request.url;
+                response.writeHead(302, { 'Location': url });
+                response.end();
+              } else {
+                console.log(data);
+                app._render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+              }
+            });
+          }
+        });
+      } else {
+        response.end('TODO: What do I do with: ' + JSON.stringify(data));
+      }
     }
   });
 
