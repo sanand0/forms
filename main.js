@@ -189,23 +189,33 @@ function main_handler(router) {
     if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
 
-      response.writeHead(200, {'Content-Type': 'text/html'});
       var data = request.body;
-      // Add metadata. TODO: author, history
-      data[':form'] = request.params.cls;
-      data[':updated'] = new Date();
-
       errors = render.validate(app, request.params.cls, data);
       if (!errors) {
-        app.db.save(data, function(err, res) {
-          if (!err) {
-            var url = (form.actions && form.actions.onSubmit) ? '/' + app._name + form.actions.onSubmit : request.url;
-            response.writeHead(302, { 'Location': url });
-            response.end();
-          } else {
-            console.log(data);
-            app._render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
-          }
+        app.db.get(data._id, function(err, original) {
+          // Add metadata. TODO: author
+          data[':form'] = request.params.cls;
+          data[':updated'] = new Date();
+          data[':history'] = original[':history'] || [];
+          data[':history'].unshift({
+            // 'who': TODO
+            ':updated': data[':updated'],
+            ':fields': _.reduce(data, function(memo, val, key) {
+              if (key[0] !== '_' && key[0] !== ':' && original[key] !== val) { memo.push([key, original[key], val]); }
+              return memo;
+            }, [])
+          });
+
+          app.db.save(data, function(err, res) {
+            if (!err) {
+              var url = (form.actions && form.actions.onSubmit) ? '/' + app._name + form.actions.onSubmit : request.url;
+              response.writeHead(302, { 'Location': url });
+              response.end();
+            } else {
+              console.log(data);
+              app._render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+            }
+          });
         });
       } else {
         app._render(200, response, {body:render.form(app, request.params.cls, data, errors)});

@@ -52,7 +52,13 @@ Renderer.form.html = {
 
       error:        '<span class="error"> <%= msg %></span>',
      section_end:    '</dl></fieldset></div>',
-    form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>'
+    form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>',
+
+    hist_start:         '<h2>Changes</h2><ol>',
+     hist_change_start: '<li>On <%= change[":updated"] %>:<ul>',
+      hist_change:      '<li><%= field[0] %>: <del><%= field[1] %></del> <ins><%= field[2] %></ins>',
+     hist_change_end:   '</ul></li>',
+    history_end:        '</ol>'
 };
 
 Renderer.view.html = {
@@ -128,6 +134,14 @@ this.form = function(app, formname, data, errors) {
   });
   t('section_end');
   t('form_end');
+
+  t('hist_start', {history: data[':history']});
+  _(data[':history']).each(function(change) {
+    t('hist_change_start', {change:change});
+    _(change[':fields']).each(function(field) { t('hist_change', {field: field}); });
+    t('hist_change_end');
+  });
+  t('hist_end');
 
   return t().join('');
 }

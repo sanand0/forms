@@ -122,7 +122,7 @@ Platform
 TODO
 ====
 - --Delete--
-- History
+- --History--
 - Multiedit
 - Better templating engine: inheritence, events
 - Sort
