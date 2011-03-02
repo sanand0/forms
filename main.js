@@ -13,8 +13,8 @@ var connect = require('connect');       // URL routing and middleware
 var render = require('./render.js');
 
 // Connect to the database.
-// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80,{cache: true});
-var couch = new(cradle.Connection)({cache: true});
+// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
+var couch = new(cradle.Connection)();
 
 // Load the App
 // ------------
@@ -160,7 +160,16 @@ function main_handler(router) {
     // Handle administration functions under /:app/_admin
     else if (request.params.cls == '_admin') {
       if (request.params.id == 'delete') {
-        app._render(response, 200, {body: 'TODO: Deleting data'});
+        app.db.all(function(err, data) {
+          var docs = _(data).reduce(function(memo, val) {
+            if (val.id[0] != '_') { memo.push({ _id: val.id, _rev: val.value.rev, _deleted: true }) }
+            return memo;
+          }, []);
+          app.db.save(docs, function(err, data) {
+            response.writeHead(302, { 'Location': '/' + app._name });
+            response.end();
+          });
+        });
       }
 
       else if (request.params.id == 'reload') {
