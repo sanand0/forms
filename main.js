@@ -4,7 +4,7 @@ var fs = require('fs');
 var path = require('path');
 
 // Third-party node modules
-var _ = require('underscore')._;        // Functional programming & templates
+var _ = require('underscore');          // Functional programming & templates
 var mime = require('mime');             // Mime types
 var cradle = require('cradle');         // CouchDB connection
 var connect = require('connect');       // URL routing and middleware
@@ -124,7 +124,7 @@ function main_handler(router) {
     connect.static.send(request, response, next, { root: __dirname, path: request.url });
   });
 
-  router.get('/:app/:cls?/:id?', function(request, response, next) {
+  router.get('/:app/:cls?/:id?/:alt?', function(request, response, next) {
     var app = App[request.params.app];
     if (!app) { return; }
 
@@ -159,20 +159,7 @@ function main_handler(router) {
 
     // Handle administration functions under /:app/_admin
     else if (request.params.cls == '_admin') {
-      if (request.params.id == 'delete') {
-        app.db.all(function(err, data) {
-          var docs = _(data).reduce(function(memo, val) {
-            if (val.id[0] != '_') { memo.push({ _id: val.id, _rev: val.value.rev, _deleted: true }) }
-            return memo;
-          }, []);
-          app.db.save(docs, function(err, data) {
-            response.writeHead(302, { 'Location': '/' + app._name });
-            response.end();
-          });
-        });
-      }
-
-      else if (request.params.id == 'reload') {
+      if (request.params.id == 'reload') {
         App[request.params.app] = loadApp(request.params.app);
         app._render(response, 200, {body: 'Application reloaded: <a href="/">Home</a>'});
       }

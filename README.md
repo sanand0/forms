@@ -122,13 +122,16 @@ Platform
 TODO
 ====
 - --Delete--
+- --Export--
 - --History--
 - Multiedit
-- Better templating engine: inheritence, events
-- Sort
-- Auth
-- Search
+- Login: custom. Explore express, see what it has
+- --Sort--
 - Reports
+- Login: via LDAP
+- Better templating engine: inheritence, events
+- Search
 - Related views (e.g. projects for a user, recent projects, etc)
 - Approval process
 - Email integration
+- External integration (e.g. JIRA)

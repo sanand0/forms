@@ -1,4 +1,4 @@
-var _ = require('underscore')._;
+var _ = require('underscore');
 
 // An accumulative template
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -31,10 +31,10 @@ _.Template = function(templates, global) {
 Renderer = { home: {}, form: {}, view: {} };
 
 Renderer.home.html = {
-  'form_start':   '<h2>Forms</h2><ul>',
+  'form_start':   '<h2>Forms</h2><ul id="forms">',
    'form':        '<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>',
   'form_end':     '</ul>',
-  'view_start':   '<h2>Views</h2><ul>',
+  'view_start':   '<h2>Views</h2><ul id="views">',
    'view':        '<li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>',
   'view_end':     '</ul>'
 };
@@ -65,7 +65,7 @@ Renderer.view.html = {
   view_start:         '<form method="post"><table>',
 
    view_head_start:   '<thead><tr><th></th>',
-    view_head:        '<th><%= field.label %></th>',
+    view_head:        '<th><a href="/<%= app._name %>/<%= name %>/<%= field.name %>"><%= field.label %></a></th>',
    view_head_end:     '</tr></thead><tbody>',
 
    view_row_start:    '<tr>',
@@ -109,7 +109,7 @@ this.home = function(app) {
 this.form = function(app, formname, data, errors) {
   data = data || {};
   errors = errors || {};
-  var global = { app: app, form: app.form[formname] };
+  var global = { app: app, name: formname, form: app.form[formname] };
   var templates = Renderer.form.html;
   var t = new _.Template(templates, global).t;
 
@@ -151,6 +151,7 @@ this.form = function(app, formname, data, errors) {
 this.view = function(app, viewname, docs) {
   var global = {
     app: app,
+    name: viewname,
     view: app.view[viewname],
     form: app.form[app.view[viewname].form]
   };
