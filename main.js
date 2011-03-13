@@ -19,7 +19,7 @@ var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
 // Load the App
 // ------------
 function loadApp(folder) {
-  // The application is just the index.js JSON file from the
+  // The application is just the index.js JSON file from the folder
   var app = JSON.parse(fs.readFileSync(path.join(folder, 'index.js'), 'utf-8'));
 
   // We then add a few variables and functions to it
@@ -105,10 +105,12 @@ function loadApp(folder) {
   return app;
 }
 
-var App = {
-  'timesheet': loadApp('timesheet'),
-  'sample': loadApp('sample')
-};
+var App = {};
+fs.readdir('.', function(err, folders) {
+  for (var i=0, folder; folder=folders[i]; i++) {
+    try { App[folder] = loadApp(folder); } catch(e) { }
+  }
+});
 
 // Main URL handler
 // ----------------
