@@ -13,8 +13,8 @@ var connect = require('connect');       // URL routing and middleware
 var render = require('./render.js');
 
 // Connect to the database.
-// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
-var couch = new(cradle.Connection)();
+var couch = new(cradle.Connection)('http://sanand.couchone.com', 80);
+// var couch = new(cradle.Connection)();
 
 // Load the App
 // ------------
