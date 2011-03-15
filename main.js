@@ -150,9 +150,9 @@ function main_handler(router) {
     // Display view
     else if (app.view && app.view[request.params.cls]) {
       var view = app.view[request.params.cls];
-      var field = request.params.id;
-      if (!field || _.indexOf(_.pluck(view.fields, 'name'), field) < 0) { field = view.fields[0].name; }
-      app.db.view(view.form + '/' + field, function(err, data) {
+      var sortby = request.params.id;
+      if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
+      app.db.view(view.form + '/' + sortby, function(err, data) {
         app.db.get(_.pluck(data, 'value'), function(err, docs) {
           app._render(response, 200, {body:render.view(app, request.params.cls, _.pluck(docs, 'doc'))}, view.template);
         });
