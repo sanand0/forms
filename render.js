@@ -159,18 +159,15 @@ this.view = function(app, viewname, docs) {
   // Basic templates
   var t = new _.Template(Renderer.view[global.view.renderer || 'html'], global).t;
 
-  // Pick the fields that have labels
-  var fieldlist = _(global.form.fields).select(function(field) { return field.label });
-
   t('view_start');
   t('view_head_start');
-  _(fieldlist).each(function(field) { t('view_head', {field:field}); });
+  _(global.view.fields).each(function(field) { t('view_head', {field:field}); });
   t('view_head_end');
 
   _(docs).each(function(doc) {
     t('view_row_start', {doc:doc});
     t('_doc_ref', {doc:doc});
-    _(fieldlist).each(function(field) { t('view_row', {field:field}); });
+    _(global.view.fields).each(function(field) { t('view_row', {field:field}); });
     t('view_row_end', global);
   });
   t('view_end');
