@@ -49,6 +49,7 @@ Renderer.form.html = {
       checkbox:     '<dd><% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.name, "\' value=\'", values[i], "\'", val.indexOf(values[i]) >= 0 ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %></dd>',
       textarea:     '<dd><textarea name="<%= field.name %>" id="<%= field.name %>" type="<%= field.type || "text" %>"><%= val %></textarea></dd>',
       select:       '<dd><select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select></dd>',
+      computed:     '<dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" disabled="true" value="<%= val %>"/></dd>',
 
       error:        '<span class="error"> <%= msg %></span>',
      section_end:    '</dl></fieldset></div>',
@@ -107,11 +108,14 @@ this.home = function(app) {
 // Render a form
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 this.form = function(app, formname, data, errors) {
-  data = data || {};
   errors = errors || {};
   var global = { app: app, name: formname, form: app.form[formname] };
   var templates = Renderer.form.html;
   var t = new _.Template(templates, global).t;
+
+  var defaults = {};
+  _(global.form.fields).each(function(field, index) { defaults[field.name] = data[field.name] || field.default || ''; });
+  data = _.extend(defaults, data);
 
   t('form_start');
   if (data && data._id) { t('_doc_ref', {doc:data}); }
@@ -125,7 +129,9 @@ this.form = function(app, formname, data, errors) {
       t('label', {
         field: field,
         error: err,
-        val: data[field.name] || field.default || '',
+        // Default value: Use the formula. Else the data supplied. Else the default. Else blank.
+        val: field.formula ? _.template(field.formula, data) : (data[field.name] || field.default || ''),
+        // List of values: If a form and field are specified, look it up. Else, assume it's an array and use it directly.
         values: (field.values && field.values.form && field.values.field) ? app._lookup(field.values.form, field.values.field) : field.values
       });
       t(templates[field.type] ? field.type : 'input');
