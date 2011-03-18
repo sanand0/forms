@@ -13,8 +13,8 @@ var connect = require('connect');       // URL routing and middleware
 var render = require('./render.js');
 
 // Connect to the database.
-var couch = new(cradle.Connection)('http://sanand.couchone.com', 80, {cache:false});
-// var couch = new(cradle.Connection)({cache:false});
+// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80, {cache:false});
+var couch = new(cradle.Connection)({cache:false});
 
 // Load the App
 // ------------
@@ -24,6 +24,11 @@ function loadApp(folder) {
 
   // We then add a few variables and functions to it
   app._name = folder;
+
+  // Sample usage:
+  //    app._render(response, 200, {'a':'abc', 'b':[1,2,3]}, templatename)
+  // Renders templatename (defaults to index.html) using the object provided
+  // The value in the object must be strings. Arrays are concatenated.
   app._render = (function() {
     var templateCache = {};
     var defaults = {
@@ -35,8 +40,9 @@ function loadApp(folder) {
       if (!template) {
         template = templateCache[templatename] = fs.readFileSync(path.join(folder, templatename), 'utf-8');
       }
+      _(params).each(function(val, key) { if (_.isArray(val)) { params[key] = val.join(''); } });
       response.writeHead(code, {'Content-Type': mime.lookup(templatename, 'text/html')});
-      response.end(_.template(template, _.extend({}, defaults, params)));
+      response.end(_.safetemplate(template, _.extend({}, defaults, params)));
     };
   })();
 
@@ -216,7 +222,7 @@ function main_handler(router) {
           });
         });
       } else {
-        app._render(200, response, render.form(app, request.params.cls, data, errors));
+        app._render(response, 200, render.form(app, request.params.cls, data, errors));
       }
     }
 

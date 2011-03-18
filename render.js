@@ -1,26 +1,49 @@
 var _ = require('underscore');
 
+
+// Patch _.template to ignore any errors in the interpolation / evaluation code
+// The only change is that we've added some try-catch blocks.
+_.safetemplate = function(str, data) {
+  var c  = _.templateSettings;
+  var tmpl = 'var __p=[],print=function(){__p.push.apply(__p,arguments);};' +
+    'with(obj||{}){__p.push(\'' +
+    str.replace(/\\/g, '\\\\')
+       .replace(/'/g, "\\'")
+       .replace(c.interpolate, function(match, code) {
+         return "',(function(){try{return " + code.replace(/\\'/g, "'") + "}catch(e){return ''}})(),'";
+       })
+       .replace(c.evaluate || null, function(match, code) {
+         return "');try{" + code.replace(/\\'/g, "'")
+                            .replace(/[\r\n\t]/g, ' ') + "}catch(e){};__p.push('";
+       })
+       .replace(/\r/g, '\\r')
+       .replace(/\n/g, '\\n')
+       .replace(/\t/g, '\\t')
+       + "');}return __p.join('');";
+  var func = new Function('obj', tmpl);
+  return data ? func(data) : func;
+};
+
+
 // An accumulative template
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // Usage:
-// var t = new _.Template({'b': '<b><%= text %></b> ', 'i': '<i><%= text %></i>'},
-//                        global_data).t;     // <-- don't forget the last 't'
-// t('b', {text:'bold'});
-// t('i', {text:'italics'});
-// t('b', {text:'bold again'}).join('') // --> <b>bold</b><i>italics</i>
+// var t = _.Template({b:'<b><%= b %></b>', i:'<i><%= b %>,<%= i %></i>'}, data);
+// t('b', {b:'bold'});
+// t('i', {i:'italics'});   // ==> ['<b>bold</b>', '<i>bold,italics</i>']
 //
 // Every time t(templatename, data) is called, it does the following:
 //
-// 1. Extends the global data object with the new data
+// 1. Extends a copy of the global data object with the new data
 // 2. Generates the templatename using the global data
 // 3. Returns the results array
 _.Template = function(templates, global) {
-  var that = this;
-  // Pre-compile the templates. TODO: This isn't really a useful optimisation.
-  that.templatecache = _(templates).reduce(function(memo, val, key) { memo[key] = _.template(val); return memo; }, {});
+  var that = {};
+  // Pre-compile the templates
+  that.templatecache = _(templates).reduce(function(memo, val, key) { memo[key] = _.safetemplate(val); return memo; }, {});
   that.global = _.extend({}, global);
   that.result = [];
-  that.t = function(name, data) {
+  return function(name, data) {
     if (data) { _.extend(that.global, data); }
     if (name && that.templatecache[name]) { that.result.push(that.templatecache[name](that.global)); }
     return that.result;
@@ -28,7 +51,7 @@ _.Template = function(templates, global) {
 };
 
 
-Renderer = { home: {}, form: {}, view: {} };
+Renderer = { home: {}, form: {}, view: {}, actions: {} };
 
 Renderer.home.html = {
   'form_start':   '<h2>Forms</h2><ul id="forms">',
@@ -78,7 +101,9 @@ Renderer.view.html = {
    view_row_end:      '</tr>',
 
   view_end:           '</tbody></table>',
+};
 
+Renderer.actions.html = {
   delete_action:      '<button name="delete" type="submit">Delete</button>',
   action_start:       '<ul>',
    action_row:        '<li><a href="/<%= app._name %><%= action.url %>"><%= action.text %></li>',
@@ -93,19 +118,32 @@ Renderer.view.csv = {
 };
 
 
+// Render functions
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+// Templates can have placeholders for the following:
+//  - form
+//  - view
+//  - action
+//  - script
+
+
+
 // Render a home page of an app
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 this.home = function(app) {
-  var t = new _.Template(Renderer.home.html, { app: app }).t;
+  var t = _.Template(Renderer.home.html, { app: app });
+  var response = {};
 
   t('form_start');
   _(app.form).each(function(form, name) { t('form', {form:form, name:name}); });
-  t('form_end');
+  response.forms = t('form_end');
+
+  var t = _.Template(Renderer.home.html, { app: app });
   t('view_start');
   _(app.view).each(function(view, name) { t('view', {view:view, name:name}); });
-  t('view_end');
+  response.views = t('view_end');
 
-  return { body: t().join('') };
+  return response;
 };
 
 // Render a form
@@ -113,13 +151,13 @@ this.home = function(app) {
 this.form = function(app, formname, data, errors) {
   errors = errors || {};
   var global = { app: app, name: formname, form: app.form[formname] };
-  var templates = Renderer.form.html;
-  var t = new _.Template(templates, global).t;
-
+  var response = {};
   var defaults = {};
   _(global.form.fields).each(function(field, index) { defaults[field.name] = data[field.name] || field.default || ''; });
   data = _.extend(defaults, data);
 
+  var templates = Renderer.form.html;
+  var t = _.Template(templates, global);
   t('form_start');
   if (data && data._id) { t('_doc_ref', {doc:data}); }
   _(global.form.fields).each(function(field, index) {
@@ -133,7 +171,7 @@ this.form = function(app, formname, data, errors) {
         field: field,
         error: err,
         // Default value: Use the formula. Else the data supplied. Else the default. Else blank.
-        val: field.formula ? _.template(field.formula, data) : (data[field.name] || field.default || ''),
+        val: field.formula ? _.safetemplate(field.formula, data) : (data[field.name] || field.default || ''),
         // List of values: If a form and field are specified, look it up. Else, assume it's an array and use it directly.
         values: (field.values && field.values.form && field.values.field) ? app._lookup(field.values.form, field.values.field) : field.values
       });
@@ -142,20 +180,22 @@ this.form = function(app, formname, data, errors) {
     }
   });
   t('section_end');
-  t('form_end');
+  response.form = t('form_end');
 
+  var t = _.Template(templates, global);
   t('hist_start', {history: data[':history']});
   _(data[':history']).each(function(change) {
     t('hist_change_start', {change:change});
     _(change[':fields']).each(function(field) { t('hist_change', {field: field}); });
     t('hist_change_end');
   });
-  t('hist_end');
+  response.hist = t('hist_end');
 
+  var t = _.Template(templates, global);
   t('script_start');
-  t('script_end');
+  response.script = t('script_end');
 
-  return { 'body': t().join('') };
+  return response;
 }
 
 // Render a list of docs for a form into XHTML
@@ -167,10 +207,9 @@ this.view = function(app, viewname, docs) {
     view: app.view[viewname],
     form: app.form[app.view[viewname].form]
   };
+  var response = {};
 
-  // Basic templates
-  var t = new _.Template(Renderer.view[global.view.renderer || 'html'], global).t;
-
+  var t = _.Template(Renderer.view[global.view.renderer || 'html'], global);
   t('view_start');
   t('view_head_start');
   _(global.view.fields).each(function(field) { t('view_head', {field:field}); });
@@ -182,14 +221,15 @@ this.view = function(app, viewname, docs) {
     _(global.view.fields).each(function(field) { t('view_row', {field:field}); });
     t('view_row_end', global);
   });
-  t('view_end');
+  response.view = t('view_end');
 
+  var t = _.Template(Renderer.actions.html, global);
   t('delete_action');
   t('action_start');
   _.each(global.view.actions, function(action) { t('action_row', {action:action}); })
-  t('action_end');
+  response.actions = t('action_end');
 
-  return { body: t().join('') };
+  return response;
 };
 
 
