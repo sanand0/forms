@@ -1,6 +1,6 @@
 {
   "template": {
-    "default": "template.html"
+    "default": "index.html"
   },
 
   "form": {
