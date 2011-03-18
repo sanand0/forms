@@ -78,14 +78,15 @@ Renderer.form.html = {
      section_end:    '</dl></fieldset></div>',
     form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>',
 
-    script_start:   '<script>',
-    script_end:     '</script>',
-
     hist_start:         '<h2>Changes</h2><ol>',
      hist_change_start: '<li>On <%= change[":updated"] %>:<ul>',
       hist_change:      '<li><%= field[0] %>: <del><%= field[1] %></del> <ins><%= field[2] %></ins>',
      hist_change_end:   '</ul></li>',
-    history_end:        '</ol>'
+    history_end:        '</ol>',
+
+    change_start:   '<script>$("form input,form select,form textarea").change(function(){for (var data={},a=$("form").serializeArray(),i=0,f;f=a[i];i++){data[f.name]=f.value};',
+     formula:        'data["<%= field.name %>"]=_.template("<%= field.formula %>",data);$("input[name=<%= field.name %>]").val(data["<%= field.name %>"]);',
+    change_end:     '})</script>'
 };
 
 Renderer.view.html = {
@@ -118,18 +119,11 @@ Renderer.view.csv = {
 };
 
 
-// Render functions
-// ------------------------------------------------------------------------------------------------------------------------------------------------------
-// Templates can have placeholders for the following:
-//  - form
-//  - view
-//  - action
-//  - script
-
-
-
 // Render a home page of an app
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
+// Returns two blocks:
+// 1. forms: a list of forms
+// 2. views: a list of views
 this.home = function(app) {
   var t = _.Template(Renderer.home.html, { app: app });
   var response = {};
@@ -148,6 +142,10 @@ this.home = function(app) {
 
 // Render a form
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
+// Returns these blocks:
+// 1. form: the rendered form
+// 2. hist: the history of changes to the form
+// 3. script: the javascript required on the form
 this.form = function(app, formname, data, errors) {
   errors = errors || {};
   var global = { app: app, name: formname, form: app.form[formname] };
@@ -192,14 +190,20 @@ this.form = function(app, formname, data, errors) {
   response.hist = t('hist_end');
 
   var t = _.Template(templates, global);
-  t('script_start');
-  response.script = t('script_end');
+  t('change_start');
+  _(global.form.fields).each(function(field, index) {
+    if (field.formula) { t('formula', {field: field}); }
+  });
+  response.script = t('change_end');
 
   return response;
 }
 
 // Render a list of docs for a form into XHTML
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
+// Returns these blocks:
+// 1. view: the rendered view
+// 2. actions: a list of actions that can be performed from the view
 this.view = function(app, viewname, docs) {
   var global = {
     app: app,
