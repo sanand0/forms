@@ -132,7 +132,7 @@ function main_handler(router) {
 
     // Display home page
     if (!request.params.cls) {
-      app._render(response, 200, {body: render.home(app)});
+      app._render(response, 200, render.home(app));
     }
 
     // Display form
@@ -140,10 +140,10 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
-          app._render(response, 200, {body:render.form(app, request.params.cls, doc)}, form.template);
+          app._render(response, 200, render.form(app, request.params.cls, doc), form.template);
         });
       } else {
-          app._render(response, 200, {body:render.form(app, request.params.cls, {})}, form.template);
+          app._render(response, 200, render.form(app, request.params.cls, {}), form.template);
       }
     }
 
@@ -154,7 +154,7 @@ function main_handler(router) {
       if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
       app.db.view(view.form + '/' + sortby, function(err, data) {
         app.db.get(_.pluck(data, 'value'), function(err, docs) {
-          app._render(response, 200, {body:render.view(app, request.params.cls, _.pluck(docs, 'doc'))}, view.template);
+          app._render(response, 200, render.view(app, request.params.cls, _.pluck(docs, 'doc')), view.template);
         });
       });
     }
@@ -216,7 +216,7 @@ function main_handler(router) {
           });
         });
       } else {
-        app._render(200, response, {body:render.form(app, request.params.cls, data, errors)});
+        app._render(200, response, render.form(app, request.params.cls, data, errors));
       }
     }
 

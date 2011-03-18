@@ -18,11 +18,11 @@ _.Template = function(templates, global) {
   var that = this;
   // Pre-compile the templates. TODO: This isn't really a useful optimisation.
   that.templatecache = _(templates).reduce(function(memo, val, key) { memo[key] = _.template(val); return memo; }, {});
-  that.global = global || {};
+  that.global = _.extend({}, global);
   that.result = [];
   that.t = function(name, data) {
-    if (data) { _.extend(global, data); }
-    if (name && that.templatecache[name]) { that.result.push(that.templatecache[name](global)); }
+    if (data) { _.extend(that.global, data); }
+    if (name && that.templatecache[name]) { that.result.push(that.templatecache[name](that.global)); }
     return that.result;
   };
 };
@@ -54,6 +54,9 @@ Renderer.form.html = {
       error:        '<span class="error"> <%= msg %></span>',
      section_end:    '</dl></fieldset></div>',
     form_end:       '<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button></form>',
+
+    script_start:   '<script>',
+    script_end:     '</script>',
 
     hist_start:         '<h2>Changes</h2><ol>',
      hist_change_start: '<li>On <%= change[":updated"] %>:<ul>',
@@ -102,7 +105,7 @@ this.home = function(app) {
   _(app.view).each(function(view, name) { t('view', {view:view, name:name}); });
   t('view_end');
 
-  return t().join('');
+  return { body: t().join('') };
 };
 
 // Render a form
@@ -149,7 +152,10 @@ this.form = function(app, formname, data, errors) {
   });
   t('hist_end');
 
-  return t().join('');
+  t('script_start');
+  t('script_end');
+
+  return { 'body': t().join('') };
 }
 
 // Render a list of docs for a form into XHTML
@@ -183,7 +189,7 @@ this.view = function(app, viewname, docs) {
   _.each(global.view.actions, function(action) { t('action_row', {action:action}); })
   t('action_end');
 
-  return t().join('');
+  return { body: t().join('') };
 };
 
 
