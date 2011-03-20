@@ -10,11 +10,11 @@ var cradle = require('cradle');         // CouchDB connection
 var connect = require('connect');       // URL routing and middleware
 
 // Local libraries
+var config = require('./config.js');
 var render = require('./render.js');
 
 // Connect to the database.
-// var couch = new(cradle.Connection)('http://sanand.couchone.com', 80, {cache:false});
-var couch = new(cradle.Connection)({cache:false});
+var couch = new(cradle.Connection)(config.couchdb || {});
 
 // Load the App
 // ------------
@@ -35,7 +35,7 @@ function loadApp(folder) {
       static_url: function(path) { return '/' + app._name + '/static/' + path; }
     };
     return function(response, code, params, templatename) {
-      templatename = app.template[templatename || 'default'] || 'index.html';
+      templatename = app.template ? app.template[templatename || 'default'] : 'index.html';
       var template = templateCache[templatename];
       if (!template) {
         template = templateCache[templatename] = fs.readFileSync(path.join(folder, templatename), 'utf-8');
@@ -112,7 +112,7 @@ function loadApp(folder) {
 }
 
 var App = {};
-fs.readdir('.', function(err, folders) {
+fs.readdir(config.apps_folder || '.', function(err, folders) {
   for (var i=0, folder; folder=folders[i]; i++) {
     try { App[folder] = loadApp(folder); } catch(e) { }
   }
