@@ -212,7 +212,7 @@ function main_handler(router) {
 
           app.db.save(data, function(err, res) {
             if (!err) {
-              var url = (form.actions && form.actions.onSubmit) ? '/' + app._name + form.actions.onSubmit : request.url;
+              var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
               response.writeHead(302, { 'Location': url });
               response.end();
             } else {
