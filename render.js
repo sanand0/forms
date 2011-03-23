@@ -117,13 +117,17 @@ Renderer.view.csv = {
    view_row_end:      '\n'
 };
 
+var Template = function(app) {
+  this.app = app;
+};
 
 // Render a home page of an app
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // Returns two blocks:
 // 1. forms: a list of forms
 // 2. views: a list of views
-this.home = function(app) {
+Template.prototype.home = function() {
+  var app = this.app;
   var t = _.Template(Renderer.home.html, { app: app });
   var response = {};
 
@@ -145,7 +149,8 @@ this.home = function(app) {
 // 1. form: the rendered form
 // 2. hist: the history of changes to the form
 // 3. script: the javascript required on the form
-this.form = function(app, formname, data, errors) {
+Template.prototype.form = function(formname, data, errors) {
+  var app = this.app;
   errors = errors || {};
   var global = { app: app, name: formname, form: app.form[formname] };
   var response = {};
@@ -203,7 +208,8 @@ this.form = function(app, formname, data, errors) {
 // Returns these blocks:
 // 1. view: the rendered view
 // 2. actions: a list of actions that can be performed from the view
-this.view = function(app, name, view, docs, response) {
+Template.prototype.view = function(name, view, docs, response) {
+  var app = this.app;
   var global = {
     app: app,
     name: name,
@@ -238,7 +244,8 @@ this.view = function(app, name, view, docs, response) {
 
 // Validates form data
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-this.validate = function(app, formname, data) {
+Template.prototype.validate = function(formname, data) {
+  var app = this.app;
   var errors = {};
   var form = app.form[formname];
 
@@ -269,3 +276,4 @@ this.validate = function(app, formname, data) {
   return _.isEmpty(errors) ? false : errors;
 };
 
+this.Template = Template;
