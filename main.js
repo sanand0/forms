@@ -129,13 +129,13 @@ function main_handler(router) {
 
   router.get('/:app/static/*', function(request, response, next) {
     var app = App[request.params.app];
-    if (!app) { return; }
+    if (!app) { response.writeHead(404, {'Content-Type': 'text/plain'}); return response.end('No such app'); }
     connect.static.send(request, response, next, { root: __dirname, path: request.url });
   });
 
   router.get('/:app/:cls?/:id?/:alt?', function(request, response, next) {
     var app = App[request.params.app];
-    if (!app) { return; }
+    if (!app) { response.writeHead(404, {'Content-Type': 'text/plain'}); return response.end('No such app'); }
 
     // Display home page
     if (!request.params.cls) {
