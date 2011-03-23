@@ -50,7 +50,6 @@ _.Template = function(templates, global) {
   };
 };
 
-
 Renderer = { home: {}, form: {}, view: {}, actions: {} };
 
 Renderer.home.html = {
@@ -204,14 +203,14 @@ this.form = function(app, formname, data, errors) {
 // Returns these blocks:
 // 1. view: the rendered view
 // 2. actions: a list of actions that can be performed from the view
-this.view = function(app, viewname, docs) {
+this.view = function(app, name, view, docs, response) {
   var global = {
     app: app,
-    name: viewname,
-    view: app.view[viewname],
-    form: app.form[app.view[viewname].form]
+    name: name,
+    view: view,
+    form: app.form[view.form]
   };
-  var response = {};
+  response = _.defaults(response, {view:[]});
 
   var t = _.Template(Renderer.view[global.view.renderer || 'html'], global);
   t('view_start');
@@ -225,13 +224,13 @@ this.view = function(app, viewname, docs) {
     _(global.view.fields).each(function(field) { t('view_row', {field:field}); });
     t('view_row_end', global);
   });
-  response.view = t('view_end');
+  Array.prototype.push.apply(response.view, t('view_end'));
 
   var t = _.Template(Renderer.actions.html, global);
   t('delete_action');
   t('action_start');
   _.each(global.view.actions, function(action) { t('action_row', {action:action}); })
-  response.actions = t('action_end');
+  Array.prototype.push.apply(response.view, t('action_end'));
 
   return response;
 };

@@ -155,12 +155,21 @@ function main_handler(router) {
 
     // Display view
     else if (app.view && app.view[request.params.cls]) {
-      var view = app.view[request.params.cls];
       var sortby = request.params.id;
-      if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
-      app.db.view(view.form + '/' + sortby, function(err, data) {
-        app.db.get(_.pluck(data, 'value'), function(err, docs) {
-          app._render(response, 200, render.view(app, request.params.cls, _.pluck(docs, 'doc')), view.template);
+
+      var viewlist = app.view[request.params.cls];
+      if (!_.isArray(viewlist)) { viewlist = [viewlist]; }
+
+      var responses = {}, count = 0;
+      _(viewlist).each(function(view) {
+        if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
+        app.db.view(view.form + '/' + sortby, function(err, data) {
+          app.db.get(_.pluck(data, 'value'), function(err, docs) {
+            render.view(app, request.params.cls, view, _.pluck(docs, 'doc'), responses);
+            if (++count >= viewlist.length) {
+              app._render(response, 200, responses, view.template);
+            }
+          });
         });
       });
     }
