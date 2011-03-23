@@ -26,10 +26,10 @@ function loadApp(folder) {
   app._name = folder;
 
   // Sample usage:
-  //    app._render(response, 200, {'a':'abc', 'b':[1,2,3]}, templatename)
+  //    app.render(response, 200, {'a':'abc', 'b':[1,2,3]}, templatename)
   // Renders templatename (defaults to index.html) using the object provided
   // The value in the object must be strings. Arrays are concatenated.
-  app._render = (function() {
+  app.render = (function() {
     var templateCache = {};
     var defaults = {
       static_url: function(path) { return '/' + app._name + '/static/' + path; }
@@ -46,6 +46,7 @@ function loadApp(folder) {
     };
   })();
 
+  // Load the database
   app.db = couch.database(app.database || 'sample');
   app.db.exists(function(err, exists) {
     if (!exists) { app.db.create(); }
@@ -138,7 +139,7 @@ function main_handler(router) {
 
     // Display home page
     if (!request.params.cls) {
-      app._render(response, 200, render.home(app));
+      app.render(response, 200, render.home(app));
     }
 
     // Display form
@@ -146,10 +147,10 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
-          app._render(response, 200, render.form(app, request.params.cls, doc), form.template);
+          app.render(response, 200, render.form(app, request.params.cls, doc), form.template);
         });
       } else {
-          app._render(response, 200, render.form(app, request.params.cls, {}), form.template);
+          app.render(response, 200, render.form(app, request.params.cls, {}), form.template);
       }
     }
 
@@ -167,7 +168,7 @@ function main_handler(router) {
           app.db.get(_.pluck(data, 'value'), function(err, docs) {
             render.view(app, request.params.cls, view, _.pluck(docs, 'doc'), responses);
             if (++count >= viewlist.length) {
-              app._render(response, 200, responses, view.template);
+              app.render(response, 200, responses, view.template);
             }
           });
         });
@@ -178,16 +179,16 @@ function main_handler(router) {
     else if (request.params.cls == '_admin') {
       if (request.params.id == 'reload') {
         App[request.params.app] = loadApp(request.params.app);
-        app._render(response, 200, {body: 'Application reloaded: <a href="/">Home</a>'});
+        app.render(response, 200, {body: 'Application reloaded: <a href="/">Home</a>'});
       }
 
       else {
-        app._render(response, 404, {body: 'No such admin command'});
+        app.render(response, 404, {body: 'No such admin command'});
       }
     }
 
     else {
-      app._render(response, 404, {body:'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id});
+      app.render(response, 404, {body:'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id});
     }
   });
 
@@ -225,13 +226,13 @@ function main_handler(router) {
               response.writeHead(302, { 'Location': url });
               response.end();
             } else {
-              console.log(data);
-              app._render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+              console.log(err, data);
+              app.render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
             }
           });
         });
       } else {
-        app._render(response, 200, render.form(app, request.params.cls, data, errors));
+        app.render(response, 200, render.form(app, request.params.cls, data, errors));
       }
     }
 
@@ -249,8 +250,8 @@ function main_handler(router) {
                 response.writeHead(302, { 'Location': url });
                 response.end();
               } else {
-                console.log(data);
-                app._render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+                console.log(err, data);
+                app.render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
               }
             });
           }
