@@ -13,51 +13,98 @@ Sample applications:
 - Surveys
 - Exams
 
-Creating an application
-=======================
-Create a folder with index.js, a JSON file that looks like this:
+A simple contact manager
+========================
+Create a folder called `contacts` with the following `index.js` (a JSON file):
 
-    { 'form': [ ... a list of forms -- see below ],
-      'view': [ ... a list of views -- see below ],
-      'template': 'html-file-to-use-as-a-template.html' }
+    {
+      "form": {
+        "person": {
+          "fields": [
+            { "name": "firstname", "label": "First name" },
+            { "name": "lastname", "label": "Last name" },
+            { "phone": "phone", "label": "Phone", "type": "phone" },
+            { "birthday": "birthday", "label": "Birthday", "type": "date" }
+          ],
+          "onsubmit": "/persons"
+        }
+      },
+      "view": {
+        "persons": {
+          "form": "person",
+          "fields": [
+            { "name": "firstname", "label": "First name" },
+            { "name": "lastname", "label": "Last name" },
+            { "name": "phone", "label": "Phone" }
+          ],
+          "actions": [
+            { "text": "Add new person", "url": "/person" }
+          ]
+        }
+      }
+    }
+
+Now create an `index.html` that has:
+
+    <!doctype html>
+    <html>
+    <head><title>Contacts</title></head>
+    <body>
+
+    <%= forms %>
+    <%= views %>
+    <%= form %>
+    <%= view %>
+    <%= actions %>
+    <%= hist %>
+
+    </body></html>
 
 This will create the following URLs:
-    - `/:app/:form`     : Show form (to create new form)
+    - `/:app/:form      : Show form (to create new form)
     - `/:app/:form/:id` : Show existing document
     - `/:app/:view`     : Show view
 
-Forms
-========
-A Form is a list of Fields and Permissions.
+Creating a form
+===============
 
-When in doubt, follow http://neyric.github.com/inputex/
+    "{ form_name }": {
+      "fields": [
+        {
+          "section":    "{ required: section title }",
+          "help":       "{ optional: section description }"
+        },
 
-A Field can either be:
+        {
+          "name":       "{ required: database name of the field }",
+          "label":      "{ required: text label to display against the field }",
+          "help":       "{ optional: detailed field help }",
+          "type":       "{ optional: input|radio|checkbox|textarea|select|computed }",
 
-1. a section header, in which case it has:
-    - a unique `id`
-    - a `section` title
-    - a `help` description. Optional
-2. OR a regular field, which can have:
-    - a unique `id`
-    - a `label` describing the field
-    - a `help` description. Optional
-    - a `type` that determines how the field is shown (defaults to text). This is similar to the HTML5 field types, with the addition of `textarea` and `select`
-        - textarea, select, text, number, checkbox, radio, date, time, file (telephone, url, e-mail, password will be considered too)
-    - a `default` value. Optional. Defaults to blank. For type `checkbox`, this can be a list.
-    - `values` for the field. Required only for types `select`, `radio` and `checkbox`. This could be:
-        - a list of values: `[1,2,3]`
-        - OR a field from a form: `{"form": "project", "field": "name"}`
-        - OR a column number from a view: `{"view": "Projects by name", "field": 0}`
-    - `validations` for the field. Optional. This is a list of validations. Each validation be:
-        - a boolean. `true` indicates a required field. `false` (which is the default) is an optional field
-        - OR an array. `[1,2,3,4,5,6,7,8,9]` indicates numbers from 1 to 10
-        - OR an array with two numbers indicates a range. `[1,10]` indicates a number range. TODO: How to specify a date range?
-        - OR a regular expression. `/(one|two|three) .* birds/`
-        - OR a function. `function(x) { return x*10 + 2 < 30 }`
-    - `score` for the field. Optional. This determines what the "score" for the field is. Useful for quiz totals, scorecard values, etc. This could be:
-        - a dictionary of values. `{'Yes': 10, 'No': 0, /Don't know/i: 5}`
-        - OR a function. `function(x) { return x.match(/Yes/i) ? 10: 0 }`
+          // Values specify the list of values for a field.
+          // They are required only for `select`,  `radio` and `checkbox`.
+          // The values can be specified as a list:
+          "values":     [1,2,3,"list","of","values"],
+
+          //... or as a lookup into another form
+          "values":     {"form": "{ form to look up }", "field": "{ field to look up in form }",
+
+          // Validations are an optional list.
+          // All validatations in the list must evaluate to true for the field to validate
+          "validations": [
+            // A validation of `true` indicates a required field
+            true,
+
+            // an array indicates a list of valid values
+            [1,2,3,4,5,6,7,8,9],
+
+            // a string indicates a regular expression.
+            '/(one|two|three) .* birds/'
+          ]
+
+      ]
+    }
+
 
 Permissions may be given to users to Create, Read, Update or Delete (CRUD) forms.
 Each permission can be granted to zero or more users. By default, anyone can perform any of these actions.
@@ -124,14 +171,65 @@ TODO
 - --Delete--
 - --Export--
 - --History--
-- Multiedit
-- Login: custom. Explore express, see what it has
+- Export content-disposition
+- View pagination
+- Access restriction
+- Use express.js for routing
+- Login: custom.
+- Better templating engine: inheritence, events
 - --Sort--
 - Reports
 - Login: via LDAP
-- Better templating engine: inheritence, events
 - Search
 - Related views (e.g. projects for a user, recent projects, etc)
 - Approval process
 - Email integration
 - External integration (e.g. JIRA)
+- Multiedit
+
+
+urls:
+    POST /:app/:form                Create if no [_id] or [_rev]
+                                    Update if [_id] and [_rev]
+                                    Delete if [_delete]
+                                    Works on 0 or more documents
+
+    GET  /:app/:form                Show blank form
+    GET  /:app/:form?field=val      Show form with fields populated
+    GET  /:app/:form/:id            Show document
+    GET  /:app/:form/:id?field=val  Show document with fields overridden
+
+    GET  /:app/:view/               Show view
+    GET  /:app/:view/?options       Show view with
+                                        fields=field1,field2,...
+                                        sort=+field1,-field2,...
+                                        :field=val
+                                        :field=<val
+                                        :field=>val
+
+... how do I stitch these together as renderers?
+
+# Client: a dropdown
+# Services: initial list as dropdown
+# Proposal status: Pending, Won, Lost
+# Order status: Accepted, Requested modification, Rejected
+# Opportunity > Source: (dropdown)
+# Change first section heading from proposal -> something else
+
+# Computed fields:
+#     Server side computation
+#     Client side compuation
+    Save computed fields
+
+Common Javascript libraries, inherited from a global app template
+
+Multiviews: Display opportunities, proposals, orders separately -- based on status.
+    View filters
+
+Conditional fields / sections: Once proposal status becomes Won, need to populate order number. [Mandatory]
+
+Totals in views:
+    Total value at the bottom -- for contract value as well as expected value
+    Total count of number of proposals -- pending, complete, etc.
+
+Custom views: Statistics on how many orders / month, etc.

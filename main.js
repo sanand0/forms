@@ -18,9 +18,11 @@ var couch = new(cradle.Connection)(config.couchdb || {});
 
 // Load the App
 // ------------
-function loadApp(folder) {
+var Application = function (folder) {
+  var app = this;
+
   // The application is just the index.js JSON file from the folder
-  var app = JSON.parse(fs.readFileSync(path.join(folder, 'index.js'), 'utf-8'));
+  _.extend(app, JSON.parse(fs.readFileSync(path.join(folder, 'index.js'), 'utf-8')));
 
   // We then add a few variables and functions to it
   app._name = folder;
@@ -45,6 +47,8 @@ function loadApp(folder) {
       response.end(_.safetemplate(template, _.extend({}, defaults, params)));
     };
   })();
+
+  app.show = new render.Template(app);
 
   // Load the database
   app.db = couch.database(app.database || 'sample');
@@ -115,7 +119,7 @@ function loadApp(folder) {
 var App = {};
 fs.readdir(config.apps_folder || '.', function(err, folders) {
   for (var i=0, folder; folder=folders[i]; i++) {
-    try { App[folder] = loadApp(folder); } catch(e) { }
+    try { App[folder] = new Application(folder); } catch(e) { }
   }
 });
 
@@ -139,7 +143,7 @@ function main_handler(router) {
 
     // Display home page
     if (!request.params.cls) {
-      app.render(response, 200, render.home(app));
+      app.render(response, 200, app.show.home());
     }
 
     // Display form
@@ -147,10 +151,10 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
-          app.render(response, 200, render.form(app, request.params.cls, doc), form.template);
+          app.render(response, 200, app.show.form(request.params.cls, doc), form.template);
         });
       } else {
-          app.render(response, 200, render.form(app, request.params.cls, {}), form.template);
+          app.render(response, 200, app.show.form(request.params.cls, {}), form.template);
       }
     }
 
@@ -166,7 +170,7 @@ function main_handler(router) {
         if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
         app.db.view(view.form + '/' + sortby, function(err, data) {
           app.db.get(_.pluck(data, 'value'), function(err, docs) {
-            render.view(app, request.params.cls, view, _.pluck(docs, 'doc'), responses);
+            app.show.view(request.params.cls, view, _.pluck(docs, 'doc'), responses);
             if (++count >= viewlist.length) {
               app.render(response, 200, responses, view.template);
             }
@@ -178,7 +182,7 @@ function main_handler(router) {
     // Handle administration functions under /:app/_admin
     else if (request.params.cls == '_admin') {
       if (request.params.id == 'reload') {
-        App[request.params.app] = loadApp(request.params.app);
+        App[request.params.app] = new Application(request.params.app);
         app.render(response, 200, {body: 'Application reloaded: <a href="/">Home</a>'});
       }
 
@@ -204,7 +208,7 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
 
       var data = request.body;
-      errors = render.validate(app, request.params.cls, data);
+      errors = app.show.validate(request.params.cls, data);
       if (!errors) {
         app.db.get(data._id, function(err, original) {
           // Add metadata. TODO: author
@@ -232,7 +236,7 @@ function main_handler(router) {
           });
         });
       } else {
-        app.render(response, 200, render.form(app, request.params.cls, data, errors));
+        app.render(response, 200, app.show.form(app, request.params.cls, data, errors));
       }
     }
 
