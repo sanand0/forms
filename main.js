@@ -50,23 +50,6 @@ var Application = function (folder) {
   // We then add a few variables and functions to it
   app._name = folder;
 
-  // Sample usage:
-  //    app.render(response, 200, 'abc', templatename)
-  //    app.render(response, 200, ['abc', 'def'], templatename)
-  // Renders templatename (defaults to index.html) using the string/array provided
-  app.render = function(response, code, params, templatename) {
-      templatename = this.template ? this.template[templatename || 'default'] : 'index.html';
-      template = utils.readFile(path.join(folder, templatename));
-      mimetype = mime.lookup(templatename, 'text/html')
-      response.statusCode = code;
-      response.setHeader('Content-Type', mimetype);
-      if (mimetype.match(/csv|xls/)) { response.setHeader('Content-Disposition', 'attachment; filename=' + templatename); }
-      response.end(_.template(template, _.extend({}, {
-        static_url: function(path) { return '/' + app._name + '/static/' + path; },
-        body: _.isArray(params) ? params.join('') : params
-      })));
-  };
-
   // Load the database
   app.db = couch.database(app.database || 'sample');
   app.db.exists(function(err, exists) {
@@ -150,42 +133,53 @@ _.extend(Application.prototype, {
 
   draw_view: function(name, view, docs, response) {
     return _.template(utils.readFile('./plugins/view.html'), {name:name, view:view, docs:docs, app:this, _:_});
-  }
-});
+  },
 
+  // Renders templatename (defaults to index.html) using the string/array provided
+  //    app.render(response, 200, 'abc', templatename)
+  //    app.render(response, 200, ['abc', 'def'], templatename)
+  render: function(response, code, params, templatename) {
+    var app = this;
+    templatename = app.template ? app.template[templatename || 'default'] : 'index.html';
+    template = utils.readFile(path.join(app._name, templatename));
+    mimetype = mime.lookup(templatename, 'text/html')
+    response.statusCode = code;
+    response.setHeader('Content-Type', mimetype);
+    if (mimetype.match(/csv|xls/)) { response.setHeader('Content-Disposition', 'attachment; filename=' + templatename); }
+    response.end(_.template(template, _.extend({}, {
+      static_url: function(path) { return '/' + app._name + '/static/' + path; },
+      body: _.isArray(params) ? params.join('') : params
+    })));
+  },
 
-// Validates form data
-// ------------------------------------------------------------------------------------------------------------------------------------------------------
-Application.prototype.validate = function(formname, data) {
-  var app = this;
-  var errors = {};
-  var form = app.form[formname];
+  validate: function(formname, data) {
+    var errors = {};
+    var form = this.form[formname];
 
-  // Report an error on a field, stating a message
-  var report_error = function(field, msg) {
-    if (!errors[field]) { errors[field] = []; }
-    errors[field].push(msg);
-  };
+    // Report an error on a field, stating a message
+    var report_error = function(field, msg) {
+      if (!errors[field]) { errors[field] = []; }
+      errors[field].push(msg);
+    };
 
-  // Check for validations on each field
-  for (var i=0, field; field=form.fields[i]; i++) {
-    if (field.validations) {
-      var key = field.name,
-          val = data[key];
-      // Perform each validation
-      for (var j=0, check; check=field.validations[j]; j++) {
-        if ((_.isBoolean    (check[0]) && !val) ||
-            (_.isRegExp     (check[0]) && !check[0].test(val)) ||
-            (_.isArray      (check[0]) && !_.contains(check[0], val))
-        ) {
-          report_error(key, check[1]);
+    // Check for validations on each field
+    for (var i=0, field; field=form.fields[i]; i++) {
+      if (field.validations) {
+        var key = field.name,
+            val = data[key];
+        for (var j=0, check; check=field.validations[j]; j++) {
+          if ((_.isBoolean    (check[0]) && !val) ||
+              (_.isRegExp     (check[0]) && !check[0].test(val)) ||
+              (_.isArray      (check[0]) && !_.contains(check[0], val))
+          ) {
+            report_error(key, check[1]);
+          }
         }
       }
     }
+    return _.isEmpty(errors) ? false : errors;
   }
-
-  return _.isEmpty(errors) ? false : errors;
-};
+});
 
 
 var App = {};
