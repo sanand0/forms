@@ -64,9 +64,9 @@ var Application = function (folder) {
       if (!template) {
         template = templateCache[templatename] = fs.readFileSync(path.join(folder, templatename), 'utf-8');
       }
-      _(params).each(function(val, key) { if (_.isArray(val)) { params[key] = val.join(''); } });
+      if (_.isArray(params)) { params = params.join(''); }
       response.writeHead(code, {'Content-Type': mime.lookup(templatename, 'text/html')});
-      response.end(_.safetemplate(template, _.extend({}, defaults, params)));
+      response.end(_.safetemplate(template, _.extend({}, defaults, { body: params })));
     };
   })();
 
@@ -107,7 +107,6 @@ var Application = function (folder) {
       var key = '_design/' + name + ':' + index;
       app.db.get(key, function(err, doc) {
         if (!err && _.isEqual(doc.views, design.views)) { return; }
-        console.log('Updating', key);
         app.db.save(key, design, function(err, res) {
           if (err) { console.log('Error saving design: ', key, res); }
         });
@@ -147,9 +146,7 @@ var Application = function (folder) {
 // TODO: rename xyz
 function xyz(response, filename, params) {
   var t = fs.readFileSync(filename, 'utf-8');
-  response = _(response || {}).defaults({body:[]});
-  response.body.push(_.template(t, _.extend(params, { _:_ })));
-  return response;
+  return _.template(t, _.extend(params, { _:_ }));
 }
 
 _.extend(Application.prototype, {
@@ -255,13 +252,12 @@ function main_handler(router) {
       var viewlist = app.view[viewname];
       if (!_.isArray(viewlist)) { viewlist = [viewlist]; }
 
-      var responses = {}, count = 0;
+      var responses = [], count = 0;
       _(viewlist).each(function(view, index) {
         if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
-        console.log(viewname + ':' + index + '/' + sortby);
         app.db.view(viewname + ':' + index + '/' + sortby, function(err, data) {
           app.db.get(_.pluck(data, 'value'), function(err, docs) {
-            app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), responses);
+            responses.push(app.draw_view(request.params.cls, view, _.pluck(docs, 'doc')));
             if (++count >= viewlist.length) {
               app.render(response, 200, responses, view.template);
             }
@@ -274,16 +270,16 @@ function main_handler(router) {
     else if (request.params.cls == '_admin') {
       if (request.params.id == 'reload') {
         App[request.params.app] = new Application(request.params.app);
-        app.render(response, 200, {body: 'Application reloaded: <a href="/">Home</a>'});
+        app.render(response, 200, 'Application reloaded: <a href="/">Home</a>');
       }
 
       else {
-        app.render(response, 404, {body: 'No such admin command'});
+        app.render(response, 404, 'No such admin command');
       }
     }
 
     else {
-      app.render(response, 404, {body:'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id});
+      app.render(response, 404, 'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id);
     }
   });
 
@@ -328,7 +324,7 @@ function main_handler(router) {
         app.db.save(data, function(err, res) {
           if (err) {
             console.log(err, data);
-            return app.render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+            return app.render(response, 400, '<pre>' + JSON.stringify(err) + '</pre>');
           }
           redirectOnSuccess();
         });
@@ -350,7 +346,7 @@ function main_handler(router) {
                 response.end();
               } else {
                 console.log(err, data);
-                app.render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+                app.render(response, 400, '<pre>' + JSON.stringify(err) + '</pre>');
               }
             });
           }
