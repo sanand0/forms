@@ -56,7 +56,10 @@ var Application = function (folder) {
   app.render = function(response, code, params, templatename) {
       templatename = this.template ? this.template[templatename || 'default'] : 'index.html';
       template = fs.readFileSync(path.join(folder, templatename), 'utf-8');
-      response.writeHead(code, {'Content-Type': mime.lookup(templatename, 'text/html')});
+      mimetype = mime.lookup(templatename, 'text/html')
+      response.statusCode = code;
+      response.setHeader('Content-Type', mimetype);
+      if (mimetype.match(/csv|xls/)) { response.setHeader('Content-Disposition', 'attachment; filename=' + templatename); }
       response.end(_.template(template, _.extend({}, {
         static_url: function(path) { return '/' + app._name + '/static/' + path; },
         body: _.isArray(params) ? params.join('') : params
@@ -172,8 +175,7 @@ Application.prototype.validate = function(formname, data) {
       for (var j=0, check; check=field.validations[j]; j++) {
         if ((_.isBoolean    (check[0]) && !val) ||
             (_.isRegExp     (check[0]) && !check[0].test(val)) ||
-            (_.isArray      (check[0]) && !_.contains(check[0], val)) ||
-            (_.isFunction   (check[0]) && !check[0](val, data))
+            (_.isArray      (check[0]) && !_.contains(check[0], val))
         ) {
           report_error(key, check[1]);
         }
