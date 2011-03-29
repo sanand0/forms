@@ -1,5 +1,5 @@
+<% if (view.name) { %><h2><%= view.name %></h2><% } %>
 <form method="post">
- <% if (view.name) { %><h2><%= view.name %></h2><% } %>
  <table>
   <thead><tr><th></th>
     <% for (var i=0, field; field=view.fields[i]; i++) { %>
@@ -16,13 +16,11 @@
    <% } %>
   </tbody>
  </table>
-</form>
-
-<button name="delete" type="submit">Delete</button>
+ <button name="delete" type="submit">Delete</button>
 </form>
 
 <% if (view.actions) { %>
- <ul>
+ <ul class="actions">
   <% for (var i=0, action; action=view.actions[i]; i++) { %>
    <li><a href="/<%= app._name %><%= action.url %>"><%= action.text %></a></li>
   <% } %>
