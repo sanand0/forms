@@ -57,7 +57,7 @@ var Application = function (folder) {
       templatename = this.template ? this.template[templatename || 'default'] : 'index.html';
       template = fs.readFileSync(path.join(folder, templatename), 'utf-8');
       response.writeHead(code, {'Content-Type': mime.lookup(templatename, 'text/html')});
-      response.end(_.safetemplate(template, _.extend({}, {
+      response.end(_.template(template, _.extend({}, {
         static_url: function(path) { return '/' + app._name + '/static/' + path; },
         body: _.isArray(params) ? params.join('') : params
       })));
