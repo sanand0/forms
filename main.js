@@ -35,31 +35,6 @@ _.safetemplate = function(str, data) {
   return data ? func(data) : func;
 };
 
-// An accumulative template
-// ------------------------------------------------------------------------------------------------------------------------------------------------------
-// Usage:
-// var t = _.Template({b:'<b><%= b %></b>', i:'<i><%= b %>,<%= i %></i>'}, data);
-// t('b', {b:'bold'});
-// t('i', {i:'italics'});   // ==> ['<b>bold</b>', '<i>bold,italics</i>']
-//
-// Every time t(templatename, data) is called, it does the following:
-//
-// 1. Extends a copy of the global data object with the new data
-// 2. Generates the templatename using the global data
-// 3. Returns the results array
-_.Template = function(templates, global) {
-  var that = {};
-  // Pre-compile the templates
-  that.templatecache = _(templates).reduce(function(memo, val, key) { memo[key] = _.safetemplate(val); return memo; }, {});
-  that.global = _.extend({}, global);
-  that.result = [];
-  return function(name, data) {
-    if (data) { _.extend(that.global, data); }
-    if (name && that.templatecache[name]) { that.result.push(that.templatecache[name](that.global)); }
-    return that.result;
-  };
-};
-
 // Connect to the database.
 var couch = new(cradle.Connection)(config.couchdb || {});
 
