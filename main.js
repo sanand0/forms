@@ -250,7 +250,7 @@ function main_handler(router) {
         if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
         app.db.view(viewname + ':' + index + '/' + sortby, function(err, data) {
           app.db.get(_.pluck(data, 'value'), function(err, docs) {
-            responses.push(app.draw_view(request.params.cls, view, _.pluck(docs, 'doc')));
+            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'));
             if (++count >= viewlist.length) {
               app.render(response, 200, responses, view.template);
             }
