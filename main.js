@@ -123,21 +123,28 @@ var Application = function (folder) {
   });
 
   // Create the design documents for the views
-  var map_field = 'function(doc) { if (doc[":form"] == "<%= form %>") { emit(doc["<%= field %>"], doc._id); } }';
-  _.each(app.view, function(view, name) {
-    app.db.save('_design/' + view.form,
-      _.reduce(view.fields, function(design, field) {
-        design[field.name] = { "map": _.template(map_field, { form: view.form, field: field.name }) };
-        return design;
-        }, {})
-    );
+  var map_field = 'function(doc) { if (doc[":form"] == "<%= form %>") { <% if (filter) { %>with(doc) { if (!(<%= filter %>)) return; }<% } %> emit(doc["<%= field.name %>"], doc._id); } }';
+  _.each(app.view, function(views, name) {
+    _.each(_.isArray(views) ? views : [views], function(view, index) {
+      for (var design={views:{}}, i=0, field; field=view.fields[i]; i++) {
+        design.views[field.name] = { "map": _.template(map_field, { form: view.form, field: field, filter:view.filter }) };
+      }
+      var key = '_design/' + name + ':' + index;
+      app.db.get(key, function(err, doc) {
+        if (!err && _.isEqual(doc.views, design.views)) { return; }
+        console.log('Updating', key);
+        app.db.save(key, design, function(err, res) {
+          if (err) { console.log('Error saving design: ', key, res); }
+        });
+      });
+    });
   });
 
   // Create a design document for looking up values.
   app.db.save('_design/lookup',
      _.reduce(lookups, function(design, val, formfield) {
        var pair = formfield.split('/');
-       design[formfield] = { "map": _.template(map_field, { form: pair[0], field: pair[1] }) };
+       design[formfield] = { "map": _.template(map_field, { form: pair[0], field: pair[1], filter:'' }) };
        return design;
      }, {})
   );
@@ -222,9 +229,13 @@ Application.prototype.validate = function(formname, data) {
 
 var App = {};
 fs.readdir(config.apps_folder || '.', function(err, folders) {
-  for (var i=0, folder; folder=folders[i]; i++) {
-    try { App[folder] = new Application(folder); } catch(e) { }
-  }
+  _.each(folders, (function(folder) {
+    path.exists(path.join(folder, 'index.js'), function(exists) {
+      if (!exists) { return; }
+      try { App[folder] = new Application(folder); }
+      catch(e) { console.log("Error loading application:", folder, e); }
+    });
+  }));
 });
 
 // Main URL handler
@@ -265,14 +276,15 @@ function main_handler(router) {
     // Display view
     else if (app.view && app.view[request.params.cls]) {
       var sortby = request.params.id;
-
-      var viewlist = app.view[request.params.cls];
+      var viewname = request.params.cls;
+      var viewlist = app.view[viewname];
       if (!_.isArray(viewlist)) { viewlist = [viewlist]; }
 
       var responses = {}, count = 0;
-      _(viewlist).each(function(view) {
+      _(viewlist).each(function(view, index) {
         if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
-        app.db.view(view.form + '/' + sortby, function(err, data) {
+        console.log(viewname + ':' + index + '/' + sortby);
+        app.db.view(viewname + ':' + index + '/' + sortby, function(err, data) {
           app.db.get(_.pluck(data, 'value'), function(err, docs) {
             app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), responses);
             if (++count >= viewlist.length) {
