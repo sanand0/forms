@@ -188,8 +188,7 @@ fs.readdir(config.apps_folder || '.', function(err, folders) {
 // ----------------
 function main_handler(router) {
   router.get('/', function(request, response, next) {
-    response.writeHead(200, {'Content-Type': 'text/html'});
-    response.end('<h1>Apps</h1><ul>' + _.map(App, function(app, name) { return '<li><a href="/' + name + '">' + name + '</a></li>'; }).join('<br>'));
+    App['default'].render(response, 200, _.template(utils.readFile('./plugins/applist.html'), { App: App }));
   });
 
   router.get('/:app/static/*', function(request, response, next) {
