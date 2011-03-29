@@ -135,24 +135,17 @@ var Application = function (folder) {
   return app;
 }
 
-// TODO: response should be a continuation object of some kind
-// TODO: rename xyz
-function xyz(response, filename, params) {
-  var t = fs.readFileSync(filename, 'utf-8');
-  return _.template(t, _.extend(params, { _:_ }));
-}
-
 _.extend(Application.prototype, {
   draw_home: function(response) {
-    return xyz(response, './plugins/home.html', {app:this});
+    return _.template(fs.readFileSync('./plugins/home.html', 'utf-8'), {app:this, _:_});
   },
 
   draw_form: function(name, form, data, errors, response) {
-    return xyz(response, './plugins/form.html', {name:name, form:form, doc:data, errors:errors || {}, app:this});
+    return _.template(fs.readFileSync('./plugins/form.html', 'utf-8'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
   },
 
   draw_view: function(name, view, docs, response) {
-    return xyz(response, './plugins/view.html', {name:name, view:view, docs:docs, app:this});
+    return _.template(fs.readFileSync('./plugins/view.html', 'utf-8'), {name:name, view:view, docs:docs, app:this, _:_});
   }
 });
 
@@ -251,9 +244,8 @@ function main_handler(router) {
         app.db.view(viewname + ':' + index + '/' + sortby, function(err, data) {
           app.db.get(_.pluck(data, 'value'), function(err, docs) {
             responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'));
-            if (++count >= viewlist.length) {
-              app.render(response, 200, responses, view.template);
-            }
+            if (++count < viewlist.length) { return; }
+            app.render(response, 200, responses, view.template);
           });
         });
       });
