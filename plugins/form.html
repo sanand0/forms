@@ -1,0 +1,71 @@
+<form method="post">
+ <% if (doc && doc._id) { %><input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/><% } %>
+ <% for (var index=0, field; field=form.fields[index]; index++) { %>
+
+  <% if (field.section || !index) { %>
+   <div class="section" id="<%= field.name %>"><h2><%= field.section %></h2><p><%= field.description %></p><fieldset><dl>
+   <% if (index > 0) { %></dl></fieldset></div><% } %>
+  <% } %>
+
+  <% if (field.label) {
+      var error = errors[field.name];
+      var val = field.formula ? _.safetemplate(field.formula, doc) : (doc[field.name] || field.default || '');
+      var values = (field.values && field.values.form && field.values.field) ? app._lookup(field.values.form, field.values.field) : field.values;
+  %>
+   <dt class="<%= error ? "error" : "" %>">
+    <label for="<%= field.name %>"><%= field.label %></label>
+    <% if (field.description) { %><p><%= field.description %></p><% } %>
+   </dt>
+
+   <% if (field.type === "radio") { %>
+    <dd><% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.name, "\' value=\'", values[i], "\'", values[i] === val ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %></dd>
+   <% } else if (field.type === "checkbox") { %>
+    <dd><% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.name, "\' value=\'", values[i], "\'", val.indexOf(values[i]) >= 0 ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %></dd>
+   <% } else if (field.type === "textarea") { %>
+    <dd><textarea name="<%= field.name %>" id="<%= field.name %>" type="<%= field.type || "text" %>"><%= val %></textarea></dd>
+   <% } else if (field.type === "select") { %>
+    <dd><select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select></dd>
+   <% } else if (field.type === "computed") { %>
+    <dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" disabled="true" value="<%= val %>"/></dd>
+   <% } else { %>
+    <dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" value="<%= val %>"/></dd>
+   <% } %>
+
+   <% if (error) { %>
+    <% for (var errnum=0, msg; msg=error[errnum]; errnum++) { %>
+     <span class="error"> <%= msg %></span>
+    <% } %>
+   <% } %>
+
+  <% } %>
+
+ <% } %>
+<button type="submit"><%= (form.actions || {}).submit || "Submit" %></button>
+</form>
+
+<% if (doc[":history"]) { %>
+<h2>Changes</h2>
+<ol>
+ <% for (var i=0, change; change=doc[":history"][i]; i++) { %>
+  <li>On <%= change[":updated"] %>:
+   <ul>
+    <% for (var j=0, field; field=change[":fields"][j]; j++) { %>
+     <li><%= field[0] %>: <del><%= field[1] %></del> <ins><%= field[2] %></ins></li>
+    <% } %>
+   </ul>
+  </li>
+ <% } %>
+</ol>
+<% } %>
+
+<script>
+$("form input,form select,form textarea").change(function(){
+  var a = $("form").serializeArray();
+  for (var data={}, i=0, f; f=a[i]; i++){
+    data[f.name] = f.value;
+  }
+  <% for (var i=0, field; field=form.fields[i]; i++) { if (field.formula) { %>
+    data["<%= field.name %>"]=_.template("<%= field.formula %>",data);$("input[name=<%= field.name %>]").val(data["<%= field.name %>"]);
+  <% } } %>
+});
+</script>
