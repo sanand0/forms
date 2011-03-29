@@ -162,26 +162,24 @@ var Application = function (folder) {
 }
 
 // TODO: response should be a continuation object of some kind
+function xyz(response, filename, params) {
+  var t = fs.readFileSync(filename, 'utf-8');
+  response = _(response || {}).defaults({body:[]});
+  response.body.push(_.template(t, _.extend(params, { _:_ })));
+  return response;
+}
+
 _.extend(Application.prototype, {
   draw_home: function(response) {
-    var t = fs.readFileSync(path.join('./plugins/home.html'), 'utf-8');
-    response = _.defaults(response || {}, {forms:[], views:[]});
-    response.forms.push(_.template(t, {app:this, _:_}));
-    return response;
+    return xyz(response, './plugins/home.html', {app:this});
   },
 
   draw_form: function(name, form, data, errors, response) {
-    var t = fs.readFileSync(path.join('./plugins/form.html'), 'utf-8');
-    response = _.defaults(response || {}, {form:[], hist:[], script:[]});
-    response.form.push(_.template(t, {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_}));
-    return response;
+    return xyz(response, './plugins/form.html', {name:name, form:form, doc:data, errors:errors || {}, app:this});
   },
 
   draw_view: function(name, view, docs, response) {
-    var t = fs.readFileSync(path.join('./plugins/view.html'), 'utf-8');
-    var response = _.defaults(response, {view:[],script:[]});
-    response.view.push(_.template(t, {name:name, view:view, docs:docs, app:this, _:_}));
-    return response;
+    return xyz(response, './plugins/view.html', {name:name, view:view, docs:docs, app:this});
   }
 });
 
