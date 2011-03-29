@@ -50,25 +50,18 @@ var Application = function (folder) {
   app._name = folder;
 
   // Sample usage:
-  //    app.render(response, 200, {'a':'abc', 'b':[1,2,3]}, templatename)
-  // Renders templatename (defaults to index.html) using the object provided
-  // The value in the object must be strings. Arrays are concatenated.
-  app.render = (function() {
-    var templateCache = {};
-    var defaults = {
-      static_url: function(path) { return '/' + app._name + '/static/' + path; }
-    };
-    return function(response, code, params, templatename) {
+  //    app.render(response, 200, 'abc', templatename)
+  //    app.render(response, 200, ['abc', 'def'], templatename)
+  // Renders templatename (defaults to index.html) using the string/array provided
+  app.render = function(response, code, params, templatename) {
       templatename = this.template ? this.template[templatename || 'default'] : 'index.html';
-      var template = templateCache[templatename];
-      if (!template) {
-        template = templateCache[templatename] = fs.readFileSync(path.join(folder, templatename), 'utf-8');
-      }
-      if (_.isArray(params)) { params = params.join(''); }
+      template = fs.readFileSync(path.join(folder, templatename), 'utf-8');
       response.writeHead(code, {'Content-Type': mime.lookup(templatename, 'text/html')});
-      response.end(_.safetemplate(template, _.extend({}, defaults, { body: params })));
-    };
-  })();
+      response.end(_.safetemplate(template, _.extend({}, {
+        static_url: function(path) { return '/' + app._name + '/static/' + path; },
+        body: _.isArray(params) ? params.join('') : params
+      })));
+  };
 
   // Load the database
   app.db = couch.database(app.database || 'sample');
