@@ -11,6 +11,7 @@ var connect = require('connect');       // URL routing and middleware
 
 // Local libraries
 var config = require('./config');
+var utils = require('./utils');
 
 // Patch _.template to ignore any errors in the interpolation / evaluation code
 // The only change is that we've added some try-catch blocks.
@@ -44,7 +45,7 @@ var Application = function (folder) {
   var app = this;
 
   // The application is just the index.js JSON file from the folder
-  _.extend(app, JSON.parse(fs.readFileSync(path.join(folder, 'index.js'), 'utf-8')));
+  _.extend(app, JSON.parse(utils.readFile(path.join(folder, 'index.js'))));
 
   // We then add a few variables and functions to it
   app._name = folder;
@@ -55,7 +56,7 @@ var Application = function (folder) {
   // Renders templatename (defaults to index.html) using the string/array provided
   app.render = function(response, code, params, templatename) {
       templatename = this.template ? this.template[templatename || 'default'] : 'index.html';
-      template = fs.readFileSync(path.join(folder, templatename), 'utf-8');
+      template = utils.readFile(path.join(folder, templatename));
       mimetype = mime.lookup(templatename, 'text/html')
       response.statusCode = code;
       response.setHeader('Content-Type', mimetype);
@@ -140,15 +141,15 @@ var Application = function (folder) {
 
 _.extend(Application.prototype, {
   draw_home: function(response) {
-    return _.template(fs.readFileSync('./plugins/home.html', 'utf-8'), {app:this, _:_});
+    return _.template(utils.readFile('./plugins/home.html'), {app:this, _:_});
   },
 
   draw_form: function(name, form, data, errors, response) {
-    return _.template(fs.readFileSync('./plugins/form.html', 'utf-8'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
+    return _.template(utils.readFile('./plugins/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
   },
 
   draw_view: function(name, view, docs, response) {
-    return _.template(fs.readFileSync('./plugins/view.html', 'utf-8'), {name:name, view:view, docs:docs, app:this, _:_});
+    return _.template(utils.readFile('./plugins/view.html'), {name:name, view:view, docs:docs, app:this, _:_});
   }
 });
 
