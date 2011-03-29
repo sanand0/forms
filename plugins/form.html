@@ -3,8 +3,8 @@
  <% for (var index=0, field; field=form.fields[index]; index++) { %>
 
   <% if (field.section || !index) { %>
-   <div class="section" id="<%= field.name %>"><h2><%= field.section %></h2><p><%= field.description %></p><fieldset><dl>
    <% if (index > 0) { %></dl></fieldset></div><% } %>
+   <div class="section" id="<%= field.name %>"><h2><%= field.section %></h2><p><%= field.description %></p><fieldset><dl>
   <% } %>
 
   <% if (field.label) {
@@ -59,13 +59,21 @@
 <% } %>
 
 <script>
-$("form input,form select,form textarea").change(function(){
+function onChange(){
   var a = $("form").serializeArray();
   for (var data={}, i=0, f; f=a[i]; i++){
     data[f.name] = f.value;
   }
   <% for (var i=0, field; field=form.fields[i]; i++) { if (field.formula) { %>
-    data["<%= field.name %>"]=_.template("<%= field.formula %>",data);$("input[name=<%= field.name %>]").val(data["<%= field.name %>"]);
+    var val = data["<%= field.name %>"] = _.template("<%= field.formula %>",data);
+    $("input[name=<%= field.name %>]").val(val);
   <% } } %>
-});
+
+  <% for (var i=0, field; field=form.fields[i]; i++) { if (field.showif) { %>
+    with(data) { var show = <%= field.showif %>; }
+    $("input[name=<%= field.name %>],#<%= field.name %>")[show ? 'show' : 'hide']();
+  <% } } %>
+}
+$("form input,form select,form textarea").change(onChange);
+onChange();
 </script>
