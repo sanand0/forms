@@ -162,6 +162,7 @@ var Application = function (folder) {
 }
 
 // TODO: response should be a continuation object of some kind
+// TODO: rename xyz
 function xyz(response, filename, params) {
   var t = fs.readFileSync(filename, 'utf-8');
   response = _(response || {}).defaults({body:[]});
@@ -309,38 +310,42 @@ function main_handler(router) {
 
     if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
-
       var data = request.body;
-      errors = app.validate(request.params.cls, data);
-      if (!errors) {
-        app.db.get(data._id, function(err, original) {
-          // Add metadata. TODO: author
-          data[':form'] = request.params.cls;
-          data[':updated'] = new Date();
-          data[':history'] = original[':history'] || [];
-          data[':history'].unshift({
-            // 'who': TODO
-            ':updated': data[':updated'],
-            ':fields': _.reduce(data, function(memo, val, key) {
-              if (key[0] !== '_' && key[0] !== ':' && original[key] !== val) { memo.push([key, original[key], val]); }
-              return memo;
-            }, [])
-          });
-
-          app.db.save(data, function(err, res) {
-            if (!err) {
-              var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
-              response.writeHead(302, { 'Location': url });
-              response.end();
-            } else {
-              console.log(err, data);
-              app.render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
-            }
-          });
-        });
-      } else {
-        app.render(response, 200, app.draw_form(request.params.cls, form, data, errors));
+      var redirectOnSuccess = function() {
+        var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
+        response.writeHead(302, { 'Location': url });
+        response.end();
+      };
+      var errors = app.validate(request.params.cls, data);
+      if (errors) {
+        return app.render(response, 200, app.draw_form(request.params.cls, form, data, errors));
       }
+      app.db.get(data._id, function(err, original) {
+        var changes = _.reduce(data, function(memo, val, key) {
+          if (key[0] !== '_' && key[0] !== ':' && original[key] !== val) { memo.push([key, original[key], val]); }
+          return memo;
+        }, []);
+
+        if (_(changes).keys().length === 0) { return redirectOnSuccess(); }
+
+        // Add metadata. TODO: author
+        data[':form'] = request.params.cls;
+        data[':updated'] = new Date();
+        data[':history'] = original[':history'] || [];
+        data[':history'].unshift({
+          // 'who': TODO
+          ':updated': data[':updated'],
+          ':fields': changes
+        });
+
+        app.db.save(data, function(err, res) {
+          if (err) {
+            console.log(err, data);
+            return app.render(response, 400, {body: '<pre>' + JSON.stringify(err) + '</pre>'});
+          }
+          redirectOnSuccess();
+        });
+      });
     }
 
     if (app.view && app.view[request.params.cls]) {

@@ -10,7 +10,7 @@
   <% if (field.label) {
       var error = errors[field.name];
       var val = field.formula ? _.safetemplate(field.formula, doc) : (doc[field.name] || field.default || '');
-      var values = (field.values && field.values.form && field.values.field) ? app._lookup(field.values.form, field.values.field) : field.values;
+      var values = (field.values && field.values.form && field.values.field) ? _.flatten(["", app._lookup(field.values.form, field.values.field)]) : field.values;
   %>
    <dt class="<%= error ? "error" : "" %>">
     <label for="<%= field.name %>"><%= field.label %></label>
@@ -26,7 +26,7 @@
    <% } else if (field.type === "select") { %>
     <dd><select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select></dd>
    <% } else if (field.type === "computed") { %>
-    <dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" disabled="true" value="<%= val %>"/></dd>
+    <dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" value="<%= val %>"/></dd>
    <% } else { %>
     <dd><input name="<%= field.name %>" type="<%= field.type || "text" %>" value="<%= val %>"/></dd>
    <% } %>
