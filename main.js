@@ -154,29 +154,20 @@ _.extend(Application.prototype, {
 
   validate: function(formname, data) {
     var errors = {};
-    var form = this.form[formname];
-
-    // Report an error on a field, stating a message
-    var report_error = function(field, msg) {
-      if (!errors[field]) { errors[field] = []; }
-      errors[field].push(msg);
-    };
-
     // Check for validations on each field
-    for (var i=0, field; field=form.fields[i]; i++) {
-      if (field.validations) {
-        var key = field.name,
-            val = data[key];
-        for (var j=0, check; check=field.validations[j]; j++) {
-          if ((_.isBoolean    (check[0]) && !val) ||
-              (_.isRegExp     (check[0]) && !check[0].test(val)) ||
-              (_.isArray      (check[0]) && !_.contains(check[0], val))
-          ) {
-            report_error(key, check[1]);
-          }
+    _.each(this.form[formname].fields, function(field) {
+      var fieldname = field.name,
+          val = data[fieldname];
+      _.each(field.validations, function(check) {
+        if ((_.isBoolean    (check[0]) && !val) ||
+            (_.isRegExp     (check[0]) && !check[0].test(val)) ||
+            (_.isArray      (check[0]) && !_.contains(check[0], val))
+        ) {
+            if (!errors[fieldname]) { errors[fieldname] = []; }
+            errors[fieldname].push(check[1]);
         }
-      }
-    }
+      });
+    });
     return _.isEmpty(errors) ? false : errors;
   }
 });
