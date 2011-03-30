@@ -198,3 +198,13 @@ TODO
 
 Totals at the bottom (count, sum)
 Custom views: Frequency, statistics, trends
+
+Use template filenames directly. No need to define a dictionary of template names
+Use
+    "template": "default.csv"
+    "module": "view.csv" for CSV rendering
+
+Lookup path for all files: (?)
+    relative to application folder
+    relative to default application folder
+    relative to root
