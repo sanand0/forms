@@ -40,3 +40,4 @@ h2 { border-bottom: 1px dotted #4f81bd; color: #4f81bd; }
 .view tr:nth-child(2n) { background-color: #edf2f8; }
 .view a { text-decoration: none; }
 .view a:hover { text-decoration: underline; }
+.view .next { text-align: right; }

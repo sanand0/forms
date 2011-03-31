@@ -2,6 +2,7 @@
 var http = require('http');
 var fs = require('fs');
 var path = require('path');
+var url = require('url');
 
 // Third-party node modules
 var _ = require('underscore');          // Functional programming & templates
@@ -123,17 +124,17 @@ var Application = function (folder) {
 }
 
 _.extend(Application.prototype, {
-  draw_home: function(response) {
+  draw_home: function() {
     return _.template(utils.readFile('./default/home.html'), {app:this, _:_});
   },
 
-  draw_form: function(name, form, data, errors, response) {
+  draw_form: function(name, form, data, errors) {
     return _.template(utils.readFile('./default/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
   },
 
-  draw_view: function(name, view, docs, response) {
+  draw_view: function(name, view, docs, viewdata) {
     var ext = view.template ? path.extname(view.template) : '.html';
-    return _.template(utils.readFile('./default/view' + ext), {name:name, view:view, docs:docs, app:this, _:_});
+    return _.template(utils.readFile('./default/view' + ext), {name:name, view:view, docs:docs, app:this, viewdata:viewdata, _:_});
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
@@ -224,17 +225,18 @@ function main_handler(router) {
 
     // Display view
     else if (app.view && app.view[request.params.cls]) {
-      var sortby = request.params.id;
+      var options = options = url.parse(request.url, true).query;
       var viewname = request.params.cls;
       var viewlist = app.view[viewname];
       if (!_.isArray(viewlist)) { viewlist = [viewlist]; }
 
       var responses = [], count = 0;
       _(viewlist).each(function(view, index) {
-        if (!sortby || _.indexOf(_.pluck(view.fields, 'name'), sortby) < 0) { sortby = view.fields[0].name; }
-        app.db.view(viewname + ':' + index + '/' + sortby, function(err, data) {
-          app.db.get(_.pluck(data, 'value'), function(err, docs) {
-            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'));
+        var sortby = options.sortby || view.fields[0].name;
+        options.limit = view.limit || 200;
+        app.db.view(viewname + ':' + index + '/' + sortby, options, function(err, viewdata) {
+          app.db.get(_.pluck(viewdata, 'value'), function(err, docs) {
+            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata);
             if (++count < viewlist.length) { return; }
             app.render(response, 200, responses, view);
           });
@@ -246,7 +248,7 @@ function main_handler(router) {
     else if (request.params.cls == '_admin') {
       if (request.params.id == 'reload') {
         App[request.params.app] = new Application(request.params.app);
-        app.render(response, 200, 'Application reloaded: <a href="/">Home</a>');
+        app.render(response, 200, _.template('Reloaded. <a href="/<%= app._name %>">Back</a>', { app:app }));
       }
 
       else {

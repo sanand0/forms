@@ -14,6 +14,12 @@
        }
      %></tr><%
    } %>
+   <tr><td class="next" colspan="<%= 1 + view.fields.length %>"> <% if (viewdata.length > 0) {
+      var first = viewdata[0];
+      var last = viewdata[viewdata.length-1];
+     %><a href="?startkey=<%= last.key %>&startkey_docid=<%= last.value %>&skip=1">Next</a>
+     <% } %>
+   </td></tr>
   </tbody>
  </table>
  <button name="delete" type="submit">Delete</button>
