@@ -1,13 +1,13 @@
 <h2>Forms</h2>
 <ul id="forms">
  <% for (var name in app.form) { %>
-  <li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>
+  <li><a href="/<%= app._name %>/<%= name %>"><%= app.form[name].label || name %></a></li>
  <% } %>
 </ul>
 
 <h2>Views</h2>
 <ul id="views">
  <% for (var name in app.view) { %>
-  <li><a href="/<%= app._name %>/<%= name %>"><%= name %></a></li>
+  <li><a href="/<%= app._name %>/<%= name %>"><%= app.view[name].label || name %></a></li>
  <% } %>
 </ul>
