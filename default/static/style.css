@@ -41,3 +41,5 @@ h2 { border-bottom: 1px dotted #4f81bd; color: #4f81bd; }
 .view a { text-decoration: none; }
 .view a:hover { text-decoration: underline; }
 .view .next { text-align: right; }
+.view thead { line-height: 1.5; }
+.view thead input { width: 1em; }

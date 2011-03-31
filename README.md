@@ -29,13 +29,16 @@ Installation
     - [underscore](https://github.com/documentcloud/underscore)
 5. Run `node main.js` and visit http://localhost:8401/
 
-Concepts
-========
-- At http://localhost:8401/ is an instance of Forms. This has a list of *applications*
-- At http://localhost:8401/sample is the home page of the sample contacts manager *application*, showing a list of *forms* and *views*.
-- At http://localhost:8401/sample/person is a person *form*. It's a list of fields that can be populated and saved as a *document*
-- At http://localhost:8401/sample/person/some-number is a *document*. You can find these from the *view*, click on them, and change them
-- At http://localhost:8401/sample/view is a *view* that shows a number of *documents*
+URLs
+====
+- / is the installation home page, showing a list of *applications*
+- /sample is the home page of the sample contacts manager *application*, showing a list of *forms* and *views*.
+- /sample/person is a person *form*. It's a list of fields that can be populated and saved as a *document*
+- /sample/person/some-number is a *document*. You can find these from the *view*, click on them, and change them
+- /sample/view is a *view* that shows a number of *documents*
+- /sample/view/name is the *view* sorted by the name *field* (ascending)
+- /sample/view/-name is the *view* sorted by the name *field* (descending)
+- /sample/static/common.js is a static file common.js served from the /sample/static folder
 
 Create an application
 =====================
@@ -164,10 +167,10 @@ Administration
 
 TODO
 ====
+- Reports on order flows
 - Computed fields in views (e.g. totals)
 - Filterable reports with date ranges
 - Search
-- Reports on order flows
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
 
 - Authentication
