@@ -132,20 +132,24 @@ _.extend(Application.prototype, {
   },
 
   draw_view: function(name, view, docs, response) {
-    return _.template(utils.readFile('./plugins/view.html'), {name:name, view:view, docs:docs, app:this, _:_});
+    var ext = view.template ? path.extname(view.template) : '.html';
+    return _.template(utils.readFile('./plugins/view' + ext), {name:name, view:view, docs:docs, app:this, _:_});
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
   //    app.render(response, 200, 'abc', templatename)
   //    app.render(response, 200, ['abc', 'def'], templatename)
-  render: function(response, code, params, templatename) {
+  render: function(response, code, params, object) {
     var app = this;
-    templatename = app.template ? app.template[templatename || 'default'] : 'index.html';
+    templatename = (object && object.template) ? object.template : (app.template || 'index.html');
     template = utils.readFile(path.join(app._name, templatename));
     mimetype = mime.lookup(templatename, 'text/html')
     response.statusCode = code;
     response.setHeader('Content-Type', mimetype);
-    if (mimetype.match(/csv|xls/)) { response.setHeader('Content-Disposition', 'attachment; filename=' + templatename); }
+    if (mimetype.match(/csv|xls/)) {
+      var filename = (object.label ? object.label.replace(/[^A-Za-z0-9_\-]+/, '-') : templatename) + path.extname(templatename);
+      response.setHeader('Content-Disposition', 'attachment; filename=' + filename);
+    }
     response.end(_.template(template, _.extend({}, {
       static_url: function(path) { return '/' + app._name + '/static/' + path; },
       body: _.isArray(params) ? params.join('') : params
@@ -211,10 +215,10 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
-          app.render(response, 200, app.draw_form(request.params.cls, form, doc), form.template);
+          app.render(response, 200, app.draw_form(request.params.cls, form, doc), form);
         });
       } else {
-          app.render(response, 200, app.draw_form(request.params.cls, form, {}), form.template);
+          app.render(response, 200, app.draw_form(request.params.cls, form, {}), form);
       }
     }
 
@@ -232,7 +236,7 @@ function main_handler(router) {
           app.db.get(_.pluck(data, 'value'), function(err, docs) {
             responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'));
             if (++count < viewlist.length) { return; }
-            app.render(response, 200, responses, view.template);
+            app.render(response, 200, responses, view);
           });
         });
       });

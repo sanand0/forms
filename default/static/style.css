@@ -16,12 +16,15 @@ h1{font-size:138.5%;}h2{font-size:123.1%;}h3{font-size:108%;}h1,h2,h3{margin:1em
 
 /* Custom code */
 /* -------------------------------------------------------------------------- */
-body { font:16px/1.5 Garamond, serif; }
-#forms, #views { font-size: 200%; font-variant: small-caps; }
-#forms li, #views li { list-style: none; }
+html { background-color: #edf2f8; }
+body { background-color: #fff; margin: 1em 4em; padding: 1em; font:18px/1.5 Calibri, sans-serif; border-radius: 1em; }
+h2 { border-bottom: 1px dotted #4f81bd; color: #4f81bd; }
 
-h1 { font-size: 64px; font-variant: small-caps; line-height: 1; margin: 0; background-color: #4f81bd; color: #fff; text-align: center; }
-#applist { text-align: center; }
-#applist li { display: inline-block; width: 30%; margin: 4px; border: 1px solid #4f81bd; background-color: #edf2f8; font-size: 32px; font-weight: bold; line-height: 100px; text-transform: uppercase; text-align: center; }
-#applist li a { display: block; height: 100%; color: #000; text-decoration: none; }
-#applist li a:hover { background-color: #a7c0de; }
+/* Format the labels */
+input, select, textarea { font-family: inherit; font-size: 80%; line-height: 1; margin-left: 5em; }
+textarea { width: 25em; height: 5em; }
+
+#forms, #views { font-size: 125%; font-weight: bold; text-transform: uppercase; }
+#forms li, #views li { list-style: none; display: inline-block; *display:inline; zoom:1; margin: 0.2em; border: 1px solid #4f81bd; background-color: #edf2f8; }
+#forms li a, #views li a { display: block; padding: 0.5em 1em; color: #000; text-decoration: none; }
+#forms li a:hover, #views li a:hover { background-color: #a7c0de; }

@@ -5,7 +5,7 @@
 
   <% if (field.section || !index) { %>
    <% if (index > 0) { %></dl></fieldset></div><% } %>
-   <div class="section" id="<%= field.name %>"><h2><%= field.section %></h2><p><%= field.description %></p><fieldset><dl>
+   <div class="section" id="<%= field.name %>"><% if (field.section) { %><h2><%= field.section %></h2><p><%= field.description %></p><% } %><fieldset><dl>
   <% } %>
 
   <% if (field.label) {
