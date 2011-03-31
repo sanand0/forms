@@ -1,5 +1,5 @@
 <% if (form.label) { %><h2><%= form.label %></h2><% } %>
-<form method="post">
+<form method="post" class="form">
  <% if (doc && doc._id) { %><input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/><% } %>
  <% for (var index=0, field; field=form.fields[index]; index++) { %>
 

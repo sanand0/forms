@@ -125,6 +125,7 @@ Each "view" object contains the following fields:
    These are the only two types currently supported.
 - `form`: required. Name of the form to display data from. This should match a `form` name
 - `filter`: optional. A Javascript expression that defines which documents should be shown. e.g. `status != "Approved"`
+- `limit`: optional. The maximum number of documents to show on a single page
 - `fields`: required. A list of fields. Fields can have:
     - `name`: required. The field name. Should match a field name in the form specified
     - `label`: required. The display name. Any text is fine.
@@ -163,34 +164,21 @@ Administration
 
 TODO
 ====
-- Export
-    Use template filenames directly. No need to define a dictionary of template names
-    Use
-        "template": "default.csv"
-        "module": "view.csv" for CSV rendering
 - Pagination
 - Computed fields in views (e.g. totals)
+- Filterable reports with date ranges
+- Reports on order flows
+- Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
+- Sort descending
+- Favicon
+
 - Authentication
 - Access control
-- Better templating engine: inheritence, events
-- Sort descending
 - Search
 - Related views (e.g. projects for a user, recent projects, etc)
 - Email integration & workflow
 - External integration (e.g. JIRA)
 - Multiedit
 - Bulk exports and import
-- Common Javascript libraries, inherited from a global app template
 
-
-Totals at the bottom (count, sum)
 Custom views: Frequency, statistics, trends
-
-
-Lookup path for all files: (?)
-    relative to application folder
-    relative to default application folder
-    relative to root
-
-Filterable reports with date ranges
-Reports on order flows

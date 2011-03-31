@@ -1,5 +1,5 @@
 <% if (view.label) { %><h2><%= view.label %></h2><% } %>
-<form method="post">
+<form method="post" class="view">
  <table>
   <thead><tr><th></th>
     <% for (var i=0, field; field=view.fields[i]; i++) { %>
@@ -7,13 +7,13 @@
     <% } %>
   </tr></thead>
   <tbody>
-   <% for (var i=0, doc; doc=docs[i]; i++) { %>
-    <tr><td><input name="doc:<%= doc._id %>:<%= doc._rev %>" type="checkbox"></td>
-     <% for (var j=0, field; field=view.fields[j]; j++) { %>
-      <td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.name] %></a></td>
-     <% } %>
-    </tr>
-   <% } %>
+   <% for (var i=0, doc; doc=docs[i]; i++) {
+     %><tr><td><input name="doc:<%= doc._id %>:<%= doc._rev %>" type="checkbox"></td><%
+       for (var j=0, field; field=view.fields[j]; j++) {
+         %><td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.name] %></a></td><%
+       }
+     %></tr><%
+   } %>
   </tbody>
  </table>
  <button name="delete" type="submit">Delete</button>
