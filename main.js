@@ -124,16 +124,16 @@ var Application = function (folder) {
 
 _.extend(Application.prototype, {
   draw_home: function(response) {
-    return _.template(utils.readFile('./plugins/home.html'), {app:this, _:_});
+    return _.template(utils.readFile('./default/home.html'), {app:this, _:_});
   },
 
   draw_form: function(name, form, data, errors, response) {
-    return _.template(utils.readFile('./plugins/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
+    return _.template(utils.readFile('./default/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
   },
 
   draw_view: function(name, view, docs, response) {
     var ext = view.template ? path.extname(view.template) : '.html';
-    return _.template(utils.readFile('./plugins/view' + ext), {name:name, view:view, docs:docs, app:this, _:_});
+    return _.template(utils.readFile('./default/view' + ext), {name:name, view:view, docs:docs, app:this, _:_});
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
@@ -192,7 +192,7 @@ fs.readdir(config.apps_folder || '.', function(err, folders) {
 // ----------------
 function main_handler(router) {
   router.get('/', function(request, response, next) {
-    App['default'].render(response, 200, _.template(utils.readFile('./plugins/applist.html'), { App: App }));
+    App['default'].render(response, 200, _.template(utils.readFile('./default/applist.html'), { App: App }));
   });
 
   router.get('/:app/static/*', function(request, response, next) {
