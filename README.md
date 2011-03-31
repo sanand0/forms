@@ -166,13 +166,12 @@ TODO
 ====
 - Computed fields in views (e.g. totals)
 - Filterable reports with date ranges
+- Search
 - Reports on order flows
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
-- Favicon
 
 - Authentication
 - Access control
-- Search
 - Related views (e.g. projects for a user, recent projects, etc)
 - Email integration & workflow
 - External integration (e.g. JIRA)
