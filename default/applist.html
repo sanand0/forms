@@ -1,8 +1,8 @@
 <div id="applist">
  <h1>Application list</h1>
  <ul>
-  <% for (var name in App) { %>
+  <% for (var name in App) { if (name !== "default") { %>
    <li><a href="/<%= name %>"><%= name %></a></li>
-  <% } %>
+  <% } } %>
  </ul>
 </div>
