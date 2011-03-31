@@ -86,19 +86,14 @@ Application
 ===========
 An application has the following fields:
 - `database`: optional. Name of the database to store documents in. Defaults to "sample".
-- `template`: required. A mapping of template files. Make sure you have a `default` template, like this:
-
-    "template": {
-        "default": "index.html",
-        "csv": "template.csv",
-        // ... etc ...
-    }
+- `template`: required. Name of the template file to use. Create an "index.html" that contains the text `<%= body %>` somewhere in it
 - `form`: required. an object containing forms. The key is the form name. The value is a form object (see below)
 - `view`: required. an object containing views. The key is the view name. The value is a view object (see below)
 
 Form objects
 ============
 Each "form" object contains the following fields:
+- `label`: optional. A display name for the form
 - `fields`: required. A list of fields. Fields can have:
     - `name`: required. The field name. Just stick to letters (preferably lowercase), numbers and underscore. No spaces.
     - `label`: required. The display name. Any text is fine.
@@ -107,7 +102,8 @@ Each "form" object contains the following fields:
     - `values`: optional. Used for type=radio|checkbox|select. This has two forms
         - a list of values, e.g. `[1,2,3]`
         - a form lookup, e.g. `{"form": "form_name", "field": "field_to_look_up"}`
-    - `formula`: optional. Used for type=computed. A text with [EJS templates](http://documentcloud.github.com/underscore/#template), e.g. `<%= field1*field2 %>kg`
+    - `formula`: optional. Used for type=computed. A text with
+      [EJS templates](http://documentcloud.github.com/underscore/#template), e.g. `<%= field1*field2 %>kg`
     - `validations`: optional. A list of validations, all of which must pass. They can be:
         - `true`: indicating that the value must be filled
         - `[1,2,3]`: a list of valid values
@@ -124,7 +120,9 @@ View objects
 ============
 Each "view" object contains the following fields:
 - `label`: optional. A display name for the view
-- `template`: optional. A template name to use from the application's template list. Defaults to `default`
+- `template`: optional. A template file to use from the application's template list.
+   Use a .html file to create a HTML view, and .csv file to create a .csv view.
+   These are the only two types currently supported.
 - `form`: required. Name of the form to display data from. This should match a `form` name
 - `filter`: optional. A Javascript expression that defines which documents should be shown. e.g. `status != "Approved"`
 - `fields`: required. A list of fields. Fields can have:
@@ -166,6 +164,10 @@ Administration
 TODO
 ====
 - Export
+    Use template filenames directly. No need to define a dictionary of template names
+    Use
+        "template": "default.csv"
+        "module": "view.csv" for CSV rendering
 - Pagination
 - Computed fields in views (e.g. totals)
 - Authentication
@@ -181,30 +183,14 @@ TODO
 - Common Javascript libraries, inherited from a global app template
 
 
-# Client: a dropdown
-# Services: initial list as dropdown
-# Proposal status: Pending, Won, Lost
-# Order status: Accepted, Requested modification, Rejected
-# Opportunity > Source: (dropdown)
-# Change first section heading from proposal -> something else
-
-# Computed fields in forms:
-#     Server side computation
-#     Client side compuation
-#     Save computed fields
-# Multiviews: Display opportunities, proposals, orders separately -- based on status.
-#     View filters
-# Conditional fields / sections: Once proposal status becomes Won, need to populate order number. [Mandatory]
-
 Totals at the bottom (count, sum)
 Custom views: Frequency, statistics, trends
 
-Use template filenames directly. No need to define a dictionary of template names
-Use
-    "template": "default.csv"
-    "module": "view.csv" for CSV rendering
 
 Lookup path for all files: (?)
     relative to application folder
     relative to default application folder
     relative to root
+
+Filterable reports with date ranges
+Reports on order flows
