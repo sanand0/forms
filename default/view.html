@@ -2,8 +2,8 @@
 <form method="post" class="view">
  <table>
   <thead><tr><th></th>
-    <% for (var i=0, field; field=view.fields[i]; i++) { %>
-     <th><a href="/<%= app._name %>/<%= name %>/<%= field.name %>"><%= field.label %></a></th>
+    <% for (var i=0, field; field=view.fields[i]; i++) { var sorted = (field.name == sortby) ? (options.descending ? "descending" : "ascending") : ""; %>
+     <th><a href="/<%= app._name %>/<%= name %>/<%= (sorted == "ascending") ? "-" + field.name : field.name %>"><%= field.label %><%= sorted == "ascending" ? " &#x25b2;" : sorted == "descending" ? " &#x25bc;" : "" %></a></th>
     <% } %>
   </tr></thead>
   <tbody>

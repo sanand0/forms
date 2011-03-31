@@ -132,9 +132,9 @@ _.extend(Application.prototype, {
     return _.template(utils.readFile('./default/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
   },
 
-  draw_view: function(name, view, docs, viewdata) {
+  draw_view: function(name, view, docs, viewdata, sortby, options) {
     var ext = view.template ? path.extname(view.template) : '.html';
-    return _.template(utils.readFile('./default/view' + ext), {name:name, view:view, docs:docs, app:this, viewdata:viewdata, _:_});
+    return _.template(utils.readFile('./default/view' + ext), {name:name, view:view, docs:docs, app:this, viewdata:viewdata, sortby:sortby, options:options, _:_});
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
@@ -196,6 +196,10 @@ function main_handler(router) {
     App['default'].render(response, 200, _.template(utils.readFile('./default/applist.html'), { App: App }));
   });
 
+  router.get('/:filename', function(request, response, next) {
+    connect.static.send(request, response, next, { root: path.join(__dirname, 'default'), path: request.params.filename });
+  });
+
   router.get('/:app/static/*', function(request, response, next) {
     var app = App[request.params.app];
     if (!app) { response.writeHead(404, {'Content-Type': 'text/plain'}); return response.end('No such app'); }
@@ -232,11 +236,12 @@ function main_handler(router) {
 
       var responses = [], count = 0;
       _(viewlist).each(function(view, index) {
-        var sortby = options.sortby || view.fields[0].name;
+        var sortby = request.params.id || view.fields[0].name;
+        if (sortby[0] == '-') { sortby = sortby.substr(1); options.descending = true; }
         options.limit = view.limit || 200;
         app.db.view(viewname + ':' + index + '/' + sortby, options, function(err, viewdata) {
           app.db.get(_.pluck(viewdata, 'value'), function(err, docs) {
-            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata);
+            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata, sortby, options);
             if (++count < viewlist.length) { return; }
             app.render(response, 200, responses, view);
           });

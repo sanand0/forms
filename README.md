@@ -164,12 +164,10 @@ Administration
 
 TODO
 ====
-- Pagination
 - Computed fields in views (e.g. totals)
 - Filterable reports with date ranges
 - Reports on order flows
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
-- Sort descending
 - Favicon
 
 - Authentication
