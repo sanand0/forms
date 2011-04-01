@@ -38,7 +38,7 @@ _.safetemplate = function(str, data) {
 };
 
 // Connect to the database.
-var couch = new(cradle.Connection)(config.couchdb || {});
+var couch = new cradle.Connection(config.couchdb || {});
 
 // Define Apps
 // ------------
@@ -121,20 +121,20 @@ var Application = function (folder) {
   _(lookups).each(function(val, key) { var pair = key.split('/'); app._lookup(pair[0], pair[1]); });
 
   return app;
-}
+};
 
 _.extend(Application.prototype, {
-  draw_home: function() {
-    return _.template(utils.readFile('./default/home.html'), {app:this, _:_});
+  draw_page: function(page, param) {
+    return _.template(utils.readFile(page), {app:this, param:param || {}, _:_});
   },
 
   draw_form: function(name, form, data, errors) {
-    return _.template(utils.readFile('./default/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
+    return _.template(utils.readFile('default/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
   },
 
   draw_view: function(name, view, docs, viewdata, sortby, options) {
     var ext = view.template ? path.extname(view.template) : '.html';
-    return _.template(utils.readFile('./default/view' + ext), {name:name, view:view, docs:docs, app:this, viewdata:viewdata, sortby:sortby, options:options, _:_});
+    return _.template(utils.readFile('default/view' + ext), {name:name, view:view, docs:docs, app:this, viewdata:viewdata, sortby:sortby, options:options, _:_});
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
@@ -180,20 +180,20 @@ _.extend(Application.prototype, {
 
 var App = {};
 fs.readdir(config.apps_folder || '.', function(err, folders) {
-  _.each(folders, (function(folder) {
+  _.each(folders, function(folder) {
     path.exists(path.join(folder, 'index.js'), function(exists) {
       if (!exists) { return; }
       try { App[folder] = new Application(folder); }
       catch(e) { console.log("Error loading application:", folder, e); }
     });
-  }));
+  });
 });
 
 // Main URL handler
 // ----------------
 function main_handler(router) {
   router.get('/', function(request, response, next) {
-    App['default'].render(response, 200, _.template(utils.readFile('./default/applist.html'), { App: App }));
+    App['default'].render(response, 200, _.template(utils.readFile('default/applist.html'), { App: App }));
   });
 
   router.get('/:filename', function(request, response, next) {
@@ -201,22 +201,16 @@ function main_handler(router) {
   });
 
   router.get('/:app/static/*', function(request, response, next) {
-    var app = App[request.params.app];
-    if (!app) { response.writeHead(404, {'Content-Type': 'text/plain'}); return response.end('No such app'); }
     connect.static.send(request, response, next, { root: __dirname, path: request.url });
   });
 
   router.get('/:app/:cls?/:id?', function(request, response, next) {
-    var app = App[request.params.app];
-    if (!app) { response.writeHead(404, {'Content-Type': 'text/plain'}); return response.end('No such app'); }
-
-    // Display home page
-    if (!request.params.cls) {
-      app.render(response, 200, app.draw_home());
-    }
+    var app = App[request.params.app] || App['default'];
+    var params = url.parse(request.url, true).query;
+    var pagename = '/' + (request.params.cls||'');
 
     // Display form
-    else if (app.form && app.form[request.params.cls]) {
+    if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
@@ -229,7 +223,6 @@ function main_handler(router) {
 
     // Display view
     else if (app.view && app.view[request.params.cls]) {
-      var options = options = url.parse(request.url, true).query;
       var viewname = request.params.cls;
       var viewlist = app.view[viewname];
       if (!_.isArray(viewlist)) { viewlist = [viewlist]; }
@@ -237,16 +230,26 @@ function main_handler(router) {
       var responses = [], count = 0;
       _(viewlist).each(function(view, index) {
         var sortby = request.params.id || view.fields[0].name;
-        if (sortby[0] == '-') { sortby = sortby.substr(1); options.descending = true; }
-        options.limit = view.limit || 200;
-        app.db.view(viewname + ':' + index + '/' + sortby, options, function(err, viewdata) {
+        if (sortby[0] == '-') { sortby = sortby.substr(1); params.descending = true; }
+        params.limit = view.limit || 200;
+        app.db.view(viewname + ':' + index + '/' + sortby, params, function(err, viewdata) {
           app.db.get(_.pluck(viewdata, 'value'), function(err, docs) {
-            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata, sortby, options);
+            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata, sortby, params);
             if (++count < viewlist.length) { return; }
             app.render(response, 200, responses, view);
           });
         });
       });
+    }
+
+    // Display page
+    else if (app.page && app.page[pagename]) {
+      app.render(response, 200, app.draw_page(app._name + '/' + app.page[pagename], params));
+    }
+
+    // If this is the home page, and no page was specified, use the default home page
+    else if (!request.params.cls) {
+      app.render(response, 200, app.draw_page('default/home.html', params));
     }
 
     // Handle administration functions under /:app/_admin
@@ -262,7 +265,9 @@ function main_handler(router) {
     }
 
     else {
-      app.render(response, 404, 'No such URL.\nApp: ' + request.params.app + '\nClass: ' + request.params.cls + '\nID: ' + request.params.id);
+      var page404 = (app.page && app.page['/404']) ? app._name + '/' + app.page['/404']
+                                                   : 'default/' + App['default'].page['/404'];
+      app.render(response, 200, app.draw_page(page404, params));
     }
   });
 
@@ -272,11 +277,11 @@ function main_handler(router) {
   router.post('/:app/:cls?/:id?', function(request, response, next) {
     // Ensure that app exists
     var app = App[request.params.app];
+    var data = request.body;
     if (!app) { return; }
 
     if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
-      var data = request.body;
       var redirectOnSuccess = function() {
         var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
         response.writeHead(302, { 'Location': url });
@@ -316,8 +321,6 @@ function main_handler(router) {
 
     if (app.view && app.view[request.params.cls]) {
       var view = app.view[request.params.cls];
-
-      var data = request.body;
       if (typeof data['delete'] !== 'undefined') {
         _(data).each(function(val, key) {
           var parts = key.split(':');

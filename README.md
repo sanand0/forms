@@ -91,7 +91,8 @@ An application has the following fields:
 - `database`: optional. Name of the database to store documents in. Defaults to "sample".
 - `template`: required. Name of the template file to use. Create an "index.html" that contains the text `<%= body %>` somewhere in it
 - `form`: required. an object containing forms. The key is the form name. The value is a form object (see below)
-- `view`: required. an object containing views. The key is the view name. The value is a view object (see below)
+- `view`: optional. an object containing views. The key is the view name. The value is a view object (see below)
+- `page`: optional. an object containing pages. The key is the page URL. The value is a HTML file that can contain EJS objects (see below)
 
 Form objects
 ============
@@ -136,6 +137,31 @@ Each "view" object contains the following fields:
     - `label`: required. The text to display for the action
     - `url`: The link to visit when the action is clicked
 
+Pages
+=====
+A page is a HTML file (or any file, for that matter) that is rendered at a particular URL.
+For example,
+
+    "page": {
+        "/":     "home.html",
+        "/help": "help.html"
+    }
+
+... lets you create two files in the application folder called `home.html` and `help.html`.
+These can contain any text you want. In addition, two variables are passed to the file:
+
+1. `app` -- the application itself (it's pretty much what you specify in `index.js`)
+2. `param` -- the URL query parameters
+3. `_` -- [underscore.js](http://documentcloud.github.com/underscore/)
+
+You can use [EJS templates](http://documentcloud.github.com/underscore/#template) to create
+templates using these variables. For example, this code in `home.html` will show all forms:
+
+    <h2>Forms</h2>
+    <% for (var form in app.forms) { %>
+      <p><%= form %>
+    <% } %>
+
 
 Authentication
 ==============
@@ -165,6 +191,24 @@ Administration
 `/app-name/_admin/reload` reloads the application
 
 
+
+- app.page = [/url => template]. This includes the home page.
+    Takes the app, params, and does whatever it wants
+
+
+"page": {
+  "/":     "home.html",
+  "/help": "help.html",
+
+}
+
+// Customer forms
+    [
+        "fields": [
+            ...
+        ],
+        "template": "form.html"
+
 TODO
 ====
 - Reports on order flows
@@ -173,9 +217,10 @@ TODO
 - Search
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
 
+- App builder. Pure Javascript.
+
 - Authentication
 - Access control
-- Related views (e.g. projects for a user, recent projects, etc)
 - Email integration & workflow
 - External integration (e.g. JIRA)
 - Multiedit

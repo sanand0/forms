@@ -1,7 +1,5 @@
 {
-  "template": {
-    "default": "index.html"
-  },
+  "template": "index.html",
 
   "form": {
     "sample": {

@@ -6,6 +6,7 @@ module.exports = {
   readFile: (function() {
     var cache = {};
     return function(filename) {
+      filename = path.join(__dirname, filename);
       if (filename in cache) {
         return cache[filename];
       }
