@@ -1,0 +1,60 @@
+<style>
+.field {
+  font: 12px 'Lucida Grande', 'Lucida Sans Unicode', Tahoma, sans-serif;
+}
+
+fieldset { margin-left: 2em; }
+label { display: block; }
+label b { display: inline-block; *display: inline; zoom: 1; width: 7em; }
+
+.detail {
+  background-color: #edf2f8;
+  display: inline-block;
+  margin-left: 3em;
+  padding: 0.5em;
+  border-radius: 0.5em;
+  box-shadow: 1px 1px 3px #ccc;
+}
+.small { width: 10em; }
+.medium { width: 15em; }
+.large { width: 20em; }
+</style>
+
+<h1>Application builder</h1>
+
+<div class="field block">
+ <div class="summary toggle">
+   <label>Field label</label>
+   <input>
+   <p></p>
+ </div>
+ <div class="detail">
+   <p><label><b>Name    </b><input  class="small"    name="name"         placeholder="Field name"> [lower case letters]</label></p>
+   <p><label><b>Label   </b><input  class="medium"   name="label"        placeholder="Field label"></label></p>
+   <p><label><b>Help    </b><input  class="large"    name="description"  placeholder="Field help"></label></p>
+   <p><label><b>Type    </b><select class="" name="type"><option>text</option><option>date</option><option>select</option></select></label></p>
+ </div>
+</div>
+
+<a class="add_field">Add field</a>
+
+<script>
+function defer(f) {
+  return function(e) {
+    var $this = $(this),
+        $field = $this.parents('.field:first');
+    setTimeout(function() { f($this, $field); }, 0)
+  };
+}
+
+$('.detail input[name=label]'      ).live('keyup change', defer(function($v, $field) { $('.summary label',  $field).html($v.val()); }));
+$('.detail input[name=description]').live('keyup change', defer(function($v, $field) { $('.summary p',      $field).html($v.val()); }));
+$('.detail input[name=type]'       ).live('change',       defer(function($v, $field) { $('.summary input',  $field).attr('type', $v.val()); }));
+
+$('.add_field').live('click', function(e) {
+  var $field = $('.field:last');
+  $field.clone().insertAfter($field);
+});
+
+
+</script>

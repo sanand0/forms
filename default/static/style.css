@@ -18,6 +18,7 @@ h1{font-size:138.5%;}h2{font-size:123.1%;}h3{font-size:108%;}h1,h2,h3{margin:1em
 html { background-color: #edf2f8; }
 body { background-color: #fff; margin: 1em 4em; padding: 1em; font:18px/1.5 Calibri, sans-serif; border-radius: 1em; }
 h2 { border-bottom: 1px dotted #4f81bd; color: #4f81bd; }
+input, select, textarea { border: 1px inset #c3c3c3; background-color: #f8f8f8; }
 
 /* applist.html */
 .applist li { list-style: none; display: inline-block; *display:inline; zoom:1; margin: 0.2em; }

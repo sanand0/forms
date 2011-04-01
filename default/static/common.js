@@ -295,7 +295,7 @@ $(function() {
   $("input[type=date]").datepicker({dateFormat: 'yy-mm-dd'});
 
   // Toggle headings
-  $('.toggle').click(function() { $(this).next().slideToggle(200); });
+  $('.toggle').live('click', function() { $(this).next().slideToggle(200); });
 
 
   $('.view thead input').each(function() {

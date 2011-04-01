@@ -193,9 +193,9 @@ Administration
 
 TODO
 ====
+- Filterable reports with date ranges
 - Reports on order flows
 - Computed fields in views (e.g. totals)
-- Filterable reports with date ranges
 - Search
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
 
