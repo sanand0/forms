@@ -14,7 +14,7 @@
 
 <% if (app.page) { %><h2>Pages</h2>
 <ul id="views">
- <% for (var name in app.page) { %>
+ <% for (var name in app.page) { if (name !== "/404") { %>
   <li><a href="/<%= app._name %><%= name %>"><%= name.substr(1) || "Home" %></a></li>
- <% } %>
+ <% } } %>
 </ul><% } %>

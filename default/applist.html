@@ -1,8 +1,14 @@
-<div id="applist">
+<div class="applist">
  <h1>Application list</h1>
  <ul>
   <% for (var name in App) { if (name !== "default") { %>
    <li><a href="/<%= name %>"><%= name %></a></li>
   <% } } %>
  </ul>
+</div>
+
+<div class="applist">
+ <h1>Tools</h1>
+ <ul>
+  <li><a href="/default/build">Create a new application</a></li>
 </div>

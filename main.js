@@ -205,7 +205,8 @@ function main_handler(router) {
   });
 
   router.get('/:app/:cls?/:id?', function(request, response, next) {
-    var app = App[request.params.app] || App['default'];
+    var app = App[request.params.app];
+    if (!app) { app = App['default']; return app.render(response, 200, app.draw_page('default/' + App['default'].page['/404'], params)); }
     var params = url.parse(request.url, true).query;
     var pagename = '/' + (request.params.cls||'');
 

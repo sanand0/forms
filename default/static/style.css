@@ -20,9 +20,9 @@ body { background-color: #fff; margin: 1em 4em; padding: 1em; font:18px/1.5 Cali
 h2 { border-bottom: 1px dotted #4f81bd; color: #4f81bd; }
 
 /* applist.html */
-#applist li { list-style: none; display: inline-block; *display:inline; zoom:1; margin: 0.2em; }
-#applist li a { display: block; padding: 0.5em 1em; color: #000; text-decoration: none; text-transform: uppercase; font-weight: bold; font-size: 150%; border: 1px solid #4f81bd; background-color: #edf2f8; }
-#applist li a:hover { background-color: #4f81bd; color: #fff; border-color: #000; }
+.applist li { list-style: none; display: inline-block; *display:inline; zoom:1; margin: 0.2em; }
+.applist li a { display: block; padding: 0.5em 1em; color: #000; text-decoration: none; text-transform: uppercase; font-weight: bold; font-size: 150%; border: 1px solid #4f81bd; background-color: #edf2f8; }
+.applist li a:hover { background-color: #4f81bd; color: #fff; border-color: #000; }
 
 /* home.html */
 #forms, #views { font-size: 125%; font-weight: bold; text-transform: uppercase; }

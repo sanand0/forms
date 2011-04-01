@@ -191,24 +191,6 @@ Administration
 `/app-name/_admin/reload` reloads the application
 
 
-
-- app.page = [/url => template]. This includes the home page.
-    Takes the app, params, and does whatever it wants
-
-
-"page": {
-  "/":     "home.html",
-  "/help": "help.html",
-
-}
-
-// Customer forms
-    [
-        "fields": [
-            ...
-        ],
-        "template": "form.html"
-
 TODO
 ====
 - Reports on order flows
