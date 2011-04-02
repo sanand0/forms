@@ -142,7 +142,7 @@ _.extend(Application.prototype, {
   //    app.render(response, 200, ['abc', 'def'], templatename)
   render: function(response, code, params, object) {
     var app = this;
-    templatename = (object && object.template) ? object.template : (app.template || 'index.html');
+    templatename = (object && object.template) ? object.template : (app.template || '../default/index.html');
     template = utils.readFile(path.join(app._name, templatename));
     mimetype = mime.lookup(templatename, 'text/html')
     response.statusCode = code;
