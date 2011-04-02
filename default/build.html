@@ -1,5 +1,5 @@
 <style>
-.field {
+.field, .app {
   font: 12px 'Lucida Grande', 'Lucida Sans Unicode', Tahoma, sans-serif;
 }
 
@@ -21,8 +21,16 @@ label b { display: inline-block; *display: inline; zoom: 1; width: 7em; }
 </style>
 
 <h1>Application builder</h1>
+<h2 style="color:red">This is not complete yet. Do not use.</h2>
 
-<div class="field block">
+<div class="app">
+  <p><label><b>Application</b><input class="medium" name="application"></label></p>
+  <p><label><b>Database   </b><input class="medium" name="database"></label></p>
+  <p><label><b>Template   </b><input class="medium" name="template"></label></p>
+</div>
+
+
+<div class="field">
  <div class="summary toggle">
    <label>Field label</label>
    <input>
@@ -36,7 +44,9 @@ label b { display: inline-block; *display: inline; zoom: 1; width: 7em; }
  </div>
 </div>
 
-<a class="add_field">Add field</a>
+<button class="add_field">Add field</button>
+<button class="make_json">Create form</button>
+<pre id="json"></pre>
 
 <script>
 function defer(f) {
@@ -56,5 +66,19 @@ $('.add_field').live('click', function(e) {
   $field.clone().insertAfter($field);
 });
 
+$('.make_json').live('click', function(e) {
+  var app = {
+    form: $('.field').map(function() {
+      var $this = $(this);
+      return {
+        'name'        : $('.detail input[name=name]'          , $this).val(),
+        'label'       : $('.detail input[name=label]'         , $this).val(),
+        'description' : $('.detail input[name=description]'   , $this).val(),
+        'type'        : $('.detail input[name=type]'          , $this).val()
+      }
+    }).get()
+  };
+  $('#json').text(JSON.stringify(app));
+});
 
 </script>
