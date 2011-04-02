@@ -29,29 +29,20 @@ Installation
     - [underscore](https://github.com/documentcloud/underscore)
 5. Run `node main.js` and visit http://localhost:8401/
 
-URLs
-====
-- / is the installation home page, showing a list of *applications*
-- /sample is the home page of the sample contacts manager *application*, showing a list of *forms* and *views*.
-- /sample/person is a person *form*. It's a list of fields that can be populated and saved as a *document*
-- /sample/person/some-number is a *document*. You can find these from the *view*, click on them, and change them
-- /sample/view is a *view* that shows a number of *documents*
-- /sample/view/name is the *view* sorted by the name *field* (ascending)
-- /sample/view/-name is the *view* sorted by the name *field* (descending)
-- /sample/static/common.js is a static file common.js served from the /sample/static folder
-
 Create an application
 =====================
 Create a folder called `contacts` with the following `index.js` (a JSON file):
 
     {
+      "database": "contacts",
+
       "form": {
         "person": {
           "fields": [
             { "name": "firstname", "label": "First name" },
             { "name": "lastname", "label": "Last name" },
-            { "phone": "phone", "label": "Phone", "type": "phone" },
-            { "birthday": "birthday", "label": "Birthday", "type": "date" }
+            { "name": "phone", "label": "Phone" },
+            { "name": "birthday", "label": "Birthday", "type": "date" }
           ],
           "onsubmit": "/persons"
         }
@@ -162,6 +153,16 @@ templates using these variables. For example, this code in `home.html` will show
       <p><%= form %>
     <% } %>
 
+URLs
+====
+- / is the installation home page, showing a list of *applications*
+- /sample is the home page of the sample contacts manager *application*, showing a list of *forms* and *views*.
+- /sample/person is a person *form*. It's a list of fields that can be populated and saved as a *document*
+- /sample/person/some-number is a *document*. You can find these from the *view*, click on them, and change them
+- /sample/view is a *view* that shows a number of *documents*
+- /sample/view/name is the *view* sorted by the name *field* (ascending)
+- /sample/view/-name is the *view* sorted by the name *field* (descending)
+- /sample/static/common.js is a static file common.js served from the /sample/static folder
 
 Authentication
 ==============
@@ -199,7 +200,7 @@ TODO
 - Search
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
 
-- App builder. Pure Javascript.
+- App builder. Pure Javascript. Just use a JSON editor.
 
 - Authentication
 - Access control
