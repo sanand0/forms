@@ -50,7 +50,7 @@ var Application = function (folder) {
   _.extend(app, JSON.parse(utils.readFile(path.join(folder, 'index.js'))));
 
   // Create the database and initialise it
-  app.db = couch.database(app.database || 'default');
+  app.db = couch.database(app.database);
   app.db.exists(function(err, exists) {
     if (!exists) { app.db.create(function() { design_app(app); }); }
     else { design_app(app); }
@@ -65,7 +65,7 @@ function design_app(app) {
     _(form.fields).each(function(field) {
       // Identify all fields looked up by this field
       if (field.values && field.values.form && field.values.field) {
-        lookups[field.values.form + '/' + field.values.field] = 1;
+        lookups[field.values.form + ':' + field.values.field] = 1;
       }
 
       // Change all strings in validations to compiled RegExps. So
@@ -89,7 +89,8 @@ function design_app(app) {
       var key = '_design/' + name + ':' + index;
       app.db.get(key, function(err, doc) {
         if (!err && _.isEqual(doc.views, design.views)) { return; }
-        app.db.save(key, design, function(err, res) {
+        if (doc) { doc.views = design.views; } else { doc = design; }
+        app.db.save(key, doc, function(err, res) {
           if (err) { app.error('Error saving design: ' + key, err); }
         });
       });
@@ -100,7 +101,7 @@ function design_app(app) {
   app._lookup = (function() {
     var cache = {};
     return function (form, field) {
-      var key = form + '/' + field;
+      var key = 'lookup/' + form + ':' + field;
       app.db.view(key, function(err, data) {
         if (err) { app.error('Error in view lookup: ' + key, err); }
         cache[key] = _(data).pluck('key');
@@ -112,7 +113,7 @@ function design_app(app) {
   // Create a design document for looking up values.
   app.db.save('_design/lookup',
      _.reduce(lookups, function(design, val, formfield) {
-       var pair = formfield.split('/');
+       var pair = formfield.split(':');
        design[formfield] = { "map": _.template(map_field, { form: pair[0], fieldname: pair[1], filter:'' }) };
        return design;
      }, {}),
@@ -121,7 +122,7 @@ function design_app(app) {
       else {
         // ... then initialise lookups
         _(lookups).each(function(val, key) {
-          var pair = key.split('/');
+          var pair = key.split(':');
           app._lookup(pair[0], pair[1]);
         });
       }
