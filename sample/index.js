@@ -1,4 +1,5 @@
 {
+  "database": "sample",
   "template": "index.html",
 
   "form": {

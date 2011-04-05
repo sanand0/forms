@@ -13,7 +13,8 @@ Sample applications:
 - Surveys
 - Exams
 
-The platform is built on
+The platform is built on:
+
 - [node.js](http://nodejs.org/) -- a fast, asynchronous server-side Javascript engine.
 - [CouchDB](http://couchdb.apache.org/) -- a flexible, distributed database.
 
@@ -79,41 +80,52 @@ This will create the following URLs:
 Application
 ===========
 An application has the following fields:
-- `database`: optional. Name of the database to store documents in. Defaults to "sample".
+
+- `database`: required. Name of the database to store documents in
 - `template`: required. Name of the template file to use. Create an "index.html" that contains the text `<%= body %>` somewhere in it
-- `form`: required. an object containing forms. The key is the form name. The value is a form object (see below)
-- `view`: optional. an object containing views. The key is the view name. The value is a view object (see below)
-- `page`: optional. an object containing pages. The key is the page URL. The value is a HTML file that can contain EJS objects (see below)
+- `form`: required. An object containing forms. The key is the form name. The value is a form object (see below)
+- `view`: required. An object containing views. The key is the view name. The value is a view object (see below)
+- `page`: optional. An object containing pages. The key is the page URL. The value is a HTML file that can contain EJS objects (see below)
 
 Form objects
 ============
 Each "form" object contains the following fields:
+
 - `label`: optional. A display name for the form
 - `fields`: required. A list of fields. Fields can have:
+
     - `name`: required. The field name. Just stick to letters (preferably lowercase), numbers and underscore. No spaces.
     - `label`: required. The display name. Any text is fine.
     - `description`: optional. The field description, as help information.
-    - `type`: optional. Defaults to `text`. Can be `radio`, `checkbox`, `textarea`, `select` or `computed`
+    - `type`: optional. Defaults to `text`. Can be `radio`, `checkbox`, `textarea`, `select`, `date` or `computed`
     - `values`: optional. Used for type=radio|checkbox|select. This has two forms
+
         - a list of values, e.g. `[1,2,3]`
         - a form lookup, e.g. `{"form": "form_name", "field": "field_to_look_up"}`
+
     - `formula`: optional. Used for type=computed. A text with
       [EJS templates](http://documentcloud.github.com/underscore/#template), e.g. `<%= field1*field2 %>kg`
-    - `validations`: optional. A list of validations, all of which must pass. They can be:
+    - `validations`: optional. A list of validations, all of which must pass. Each validation is an array of [test, message]. Tests can be:
+
         - `true`: indicating that the value must be filled
         - `[1,2,3]`: a list of valid values
-        - `"colou?r"`: a string that should be present (treated as a regular expression)
+        - `/colou?r/`: a string that should be match (treated as a regular expression)
+
     - `showif`: optional. A Javascript expression that defines when the field should be shown or hidden. e.g. `status != "Approved"`
+
 - `fields`: can also contain section breaks. Each section is identified by:
+
     - `section`: required. The section name.
     - `description`: optional. The section description.
     - `showif`: optional. A Javascript expression that defines when the entire section should be shown or hidden. e.g. `status != "Approved"`
+
 - `onsubmit`: a URL to send the user to once the form is submitted. This is typically a view
 - `template`: optional. A template name to use from the application's template list. Defaults to `default`
 
 View objects
 ============
 Each "view" object contains the following fields:
+
 - `label`: optional. A display name for the view
 - `template`: optional. A template file to use from the application's template list.
    Use a .html file to create a HTML view, and .csv file to create a .csv view.
@@ -194,6 +206,7 @@ Administration
 
 TODO
 ====
+- Authentication: LDAP, OAuth2
 - Filterable reports with date ranges
 - Reports on order flows
 - Computed fields in views (e.g. totals)
@@ -202,7 +215,8 @@ TODO
 
 - App builder. Pure Javascript. Just use a JSON editor.
 
-- Authentication
+- View count
+
 - Access control
 - Email integration & workflow
 - External integration (e.g. JIRA)
