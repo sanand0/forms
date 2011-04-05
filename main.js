@@ -44,19 +44,20 @@ var couch = new cradle.Connection(config.couchdb || {});
 // ------------
 var Application = function (folder) {
   var app = this;
+  app._name = folder;
 
   // The application is just the index.js JSON file from the folder
   _.extend(app, JSON.parse(utils.readFile(path.join(folder, 'index.js'))));
 
-  // We then add a few variables and functions to it
-  app._name = folder;
-
-  // Load the database
-  app.db = couch.database(app.database || 'sample');
+  // Create the database and initialise it
+  app.db = couch.database(app.database || 'default');
   app.db.exists(function(err, exists) {
-    if (!exists) { app.db.create(); }
+    if (!exists) { app.db.create(function() { design_app(app); }); }
+    else { design_app(app); }
   });
+}
 
+function design_app(app) {
   // Post process forms
   var lookups = {};
   _(app.form).each(function(form, name) {
@@ -79,30 +80,21 @@ var Application = function (folder) {
   });
 
   // Create the design documents for the views
-  var map_field = 'function(doc) { if (doc[":form"] == "<%= form %>") { <% if (filter) { %>with(doc) { if (!(<%= filter %>)) return; }<% } %> emit(doc["<%= field.name %>"], doc._id); } }';
+  var map_field = 'function(doc) { if (doc[":form"] == "<%= form %>") { <% if (filter) { %>with(doc) { if (!(<%= filter %>)) return; }<% } %> emit(doc["<%= fieldname %>"], doc._id); } }';
   _.each(app.view, function(views, name) {
     _.each(_.isArray(views) ? views : [views], function(view, index) {
       for (var design={views:{}}, i=0, field; field=view.fields[i]; i++) {
-        design.views[field.name] = { "map": _.template(map_field, { form: view.form, field: field, filter:view.filter }) };
+        design.views[field.name] = { "map": _.template(map_field, { form: view.form, fieldname: field.name, filter:view.filter }) };
       }
       var key = '_design/' + name + ':' + index;
       app.db.get(key, function(err, doc) {
         if (!err && _.isEqual(doc.views, design.views)) { return; }
         app.db.save(key, design, function(err, res) {
-          if (err) { console.log('Error saving design: ', key, res); }
+          if (err) { app.error('Error saving design: ' + key, err); }
         });
       });
     });
   });
-
-  // Create a design document for looking up values.
-  app.db.save('_design/lookup',
-     _.reduce(lookups, function(design, val, formfield) {
-       var pair = formfield.split('/');
-       design[formfield] = { "map": _.template(map_field, { form: pair[0], field: pair[1], filter:'' }) };
-       return design;
-     }, {})
-  );
 
   // Helper function for lookups. app._lookup(form, field) -> list of values
   app._lookup = (function() {
@@ -110,20 +102,40 @@ var Application = function (folder) {
     return function (form, field) {
       var key = form + '/' + field;
       app.db.view(key, function(err, data) {
-        if (err) { console.log(err, data); }
+        if (err) { app.error('Error in view lookup: ' + key, err); }
         cache[key] = _(data).pluck('key');
       });
       return cache[key] || [];
     };
   })();
 
-  // Initialise lookups
-  _(lookups).each(function(val, key) { var pair = key.split('/'); app._lookup(pair[0], pair[1]); });
+  // Create a design document for looking up values.
+  app.db.save('_design/lookup',
+     _.reduce(lookups, function(design, val, formfield) {
+       var pair = formfield.split('/');
+       design[formfield] = { "map": _.template(map_field, { form: pair[0], fieldname: pair[1], filter:'' }) };
+       return design;
+     }, {}),
+     function(err, res) {
+      if (err) { app.error('Error saving lookup design: ' + lookups, err, res); }
+      else {
+        // ... then initialise lookups
+        _(lookups).each(function(val, key) {
+          var pair = key.split('/');
+          app._lookup(pair[0], pair[1]);
+        });
+      }
+    }
+  );
 
   return app;
 };
 
 _.extend(Application.prototype, {
+  error: function(msg, err, data) {
+    console.log(this._name, msg, err, data || '');
+  },
+
   draw_page: function(page, param) {
     return _.template(utils.readFile(page), {app:this, param:param || {}, _:_});
   },
@@ -184,7 +196,7 @@ fs.readdir(config.apps_folder || '.', function(err, folders) {
     path.exists(path.join(folder, 'index.js'), function(exists) {
       if (!exists) { return; }
       try { App[folder] = new Application(folder); }
-      catch(e) { console.log("Error loading application:", folder, e); }
+      catch(e) { console.log('App loader', 'Error loading application:', folder, e); }
     });
   });
 });
@@ -312,7 +324,7 @@ function main_handler(router) {
 
         app.db.save(data, function(err, res) {
           if (err) {
-            console.log(err, data);
+            app.error('Error saving doc:', err, data);
             return app.render(response, 400, '<pre>' + JSON.stringify(err) + '</pre>');
           }
           redirectOnSuccess();
@@ -332,7 +344,7 @@ function main_handler(router) {
                 response.writeHead(302, { 'Location': url });
                 response.end();
               } else {
-                console.log(err, data);
+                app.error('Error saving multiview:', err, data);
                 app.render(response, 400, '<pre>' + JSON.stringify(err) + '</pre>');
               }
             });
