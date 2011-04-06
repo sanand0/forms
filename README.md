@@ -121,8 +121,8 @@ Each "form" object contains the following fields:
 
 - `onsubmit`: a URL to send the user to once the form is submitted. This is typically a view
 - `actions`: optional. A list of actions to display along with the documents. Actions can have:
-    - `label`: required. The text to display for the action
-    - `url`: The link to visit when the action is clicked
+    - `label`: required. The text to display for the action (templates using the variables `app`, `form` or `doc` allowed)
+    - `url`: The link to visit when the action is clicked (templates using the variables `app`, `form` or `doc` allowed)
 - `template`: optional. A template name to use from the application's template list. Defaults to `default`
 
 View objects
@@ -140,8 +140,8 @@ Each "view" object contains the following fields:
     - `name`: required. The field name. Should match a field name in the form specified
     - `label`: required. The display name. Any text is fine.
 - `actions`: optional. A list of actions to display along with the documents. Actions can have:
-    - `label`: required. The text to display for the action
-    - `url`: The link to visit when the action is clicked
+    - `label`: required. The text to display for the action (templates using the variables `app`, `view` or `docs` allowed)
+    - `url`: The link to visit when the action is clicked (templates using the variables `app`, `view` or `docs` allowed)
 
 Pages
 =====
