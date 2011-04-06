@@ -11,7 +11,12 @@
   <% if (field.label) {
       var error = errors[field.name];
       var val = field.formula ? _.safetemplate(field.formula, doc) : (doc[field.name] || field.default || '');
-      var values = (field.values && field.values.form && field.values.field) ? _.flatten(["", app._lookup(field.values.form, field.values.field)]) : field.values;
+      if (field.values && field.values.form && field.values.field) {
+        var values = app._lookup(field.values.form, field.values.field);
+        if (!_(field.validations).contains(true)) { values.unshift("");  }
+      } else {
+        var values = field.values;
+      }
   %>
    <dt class="<%= error ? "error" : "" %>">
     <label for="<%= field.name %>"><%= field.label %></label>
