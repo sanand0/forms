@@ -120,6 +120,9 @@ Each "form" object contains the following fields:
     - `showif`: optional. A Javascript expression that defines when the entire section should be shown or hidden. e.g. `status != "Approved"`
 
 - `onsubmit`: a URL to send the user to once the form is submitted. This is typically a view
+- `actions`: optional. A list of actions to display along with the documents. Actions can have:
+    - `label`: required. The text to display for the action
+    - `url`: The link to visit when the action is clicked
 - `template`: optional. A template name to use from the application's template list. Defaults to `default`
 
 View objects

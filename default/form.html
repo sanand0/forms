@@ -51,6 +51,14 @@
  <button type="submit"><%= (form.actions || {}).submit || "Submit" %></button>
 </form>
 
+<% if (form.actions) { %>
+ <ul class="actions">
+  <% for (var i=0, action; action=form.actions[i]; i++) { %>
+   <li><a href="/<%= app._name %><%= action.url %>"><%= action.label %></a></li>
+  <% } %>
+ </ul>
+<% } %>
+
 <% if (doc[":history"]) { %>
 <h2>Changes</h2>
 <ol>
