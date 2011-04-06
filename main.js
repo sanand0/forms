@@ -228,10 +228,14 @@ function main_handler(router) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
+          if (err) {
+            app.error('Error loading doc:', err, doc);
+            return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
+          }
           app.render(response, 200, app.draw_form(request.params.cls, form, doc), form);
         });
       } else {
-          app.render(response, 200, app.draw_form(request.params.cls, form, {}), form);
+          app.render(response, 200, app.draw_form(request.params.cls, form, params), form);
       }
     }
 
@@ -326,7 +330,7 @@ function main_handler(router) {
         app.db.save(data, function(err, res) {
           if (err) {
             app.error('Error saving doc:', err, data);
-            return app.render(response, 400, '<pre>' + JSON.stringify(err) + '</pre>');
+            return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
           }
           redirectOnSuccess();
         });
@@ -346,7 +350,7 @@ function main_handler(router) {
                 response.end();
               } else {
                 app.error('Error saving multiview:', err, data);
-                app.render(response, 400, '<pre>' + JSON.stringify(err) + '</pre>');
+                app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
               }
             });
           }

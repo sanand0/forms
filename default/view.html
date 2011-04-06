@@ -1,4 +1,7 @@
-<% if (view.label) { %><h2><%= view.label %></h2><% } %>
+<%
+var context = {app:app, view:view, docs:docs};
+
+if (view.label) { %><h2><%= view.label %></h2><% } %>
 <form method="post" class="view">
  <table>
   <thead><tr><th></th><%
@@ -28,7 +31,7 @@
 <% if (view.actions) { %>
  <ul class="actions">
   <% for (var i=0, action; action=view.actions[i]; i++) { %>
-   <li><a href="/<%= app._name %><%= action.url %>"><%= action.label %></a></li>
+   <li><a href="/<%= app._name %><%= _.template(action.url, context) %>"><%= _.template(action.label, context) %></a></li>
   <% } %>
  </ul>
 <% } %>

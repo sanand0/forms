@@ -1,4 +1,7 @@
-<% if (form.label) { %><h2><%= form.label %></h2><% } %>
+<%
+var context = {app:app, form:form, doc:doc};
+
+if (form.label) { %><h2><%= form.label %></h2><% } %>
 <form method="post" class="form">
  <% if (doc && doc._id) { %><input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/><% } %>
  <% for (var index=0, field; field=form.fields[index]; index++) { %>
@@ -54,7 +57,7 @@
 <% if (form.actions) { %>
  <ul class="actions">
   <% for (var i=0, action; action=form.actions[i]; i++) { %>
-   <li><a href="/<%= app._name %><%= action.url %>"><%= action.label %></a></li>
+   <li><a href="/<%= app._name %><%= _.template(action.url, context) %>"><%= _.template(action.label, context) %></a></li>
   <% } %>
  </ul>
 <% } %>
