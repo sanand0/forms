@@ -366,6 +366,8 @@ function main_handler(router) {
 
 var server = connect(
   connect.bodyParser(),
+  connect.cookieParser(),
+  connect.session({ secret: config.secret }),
   connect.router(main_handler)
 ).listen(8401);
 

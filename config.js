@@ -6,5 +6,9 @@ module.exports = {
     cache: false,
   },
 
+  // Secret key
+  secret: 'CZdS25R5MwCPCV0fpbW99NRumWiqRPC8g3MLrndLVZG43rO9YxEl07tcP6ZGLEw',
+
+  // Location of the applications folder
   apps_folder: '.'
 };
