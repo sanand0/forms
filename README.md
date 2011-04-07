@@ -137,7 +137,12 @@ Each "view" object contains the following fields:
 - `filter`: optional. A Javascript expression that defines which documents should be shown. e.g. `status != "Approved"`
 - `limit`: optional. The maximum number of documents to show on a single page
 - `fields`: required. A list of fields. Fields can have:
-    - `name`: required. The field name. Should match a field name in the form specified
+    - `name`: required. The field name. Should match a field name in the form specified. Certain special fields are available:
+        - `:form`: holds the name of the form
+        - `:updated`: holds the last updated date and time
+        - `:history`: is an array of all the changes made.
+          Each change is an object with `:updated` holding the time of the change,
+          and `:fields` holding an object of fields changes.
     - `label`: required. The display name. Any text is fine.
 - `actions`: optional. A list of actions to display along with the documents. Actions can have:
     - `label`: required. The text to display for the action (templates using the variables `app`, `view` or `docs` allowed)
@@ -209,6 +214,9 @@ Administration
 
 TODO
 ====
+- Breadcrumb navigation
+- Cancel button <= referer
+- Cache static files
 - Authentication: LDAP, OAuth2
 - Filterable reports with date ranges
 - Reports on order flows
