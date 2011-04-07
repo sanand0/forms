@@ -34,10 +34,10 @@ input, select, textarea { border: 1px inset #c3c3c3; background-color: #f8f8f8; 
 .applist li a:hover { background-color: #4f81bd; color: #fff; border-color: #000; }
 
 /* home.html */
-#forms, #views { font-size: 125%; font-weight: bold; text-transform: uppercase; }
-#forms li, #views li { list-style: none; display: inline-block; *display:inline; zoom:1; margin: 0.2em; border: 1px solid #4f81bd; background-color: #edf2f8; }
-#forms li a, #views li a { display: block; padding: 0.5em 1em; color: #000; text-decoration: none; }
-#forms li a:hover, #views li a:hover { background-color: #a7c0de; }
+.objlist { font-size: 125%; font-weight: bold; text-transform: uppercase; }
+.objlist li { list-style: none; display: inline-block; *display:inline; zoom:1; margin: 0.2em; border: 1px solid #4f81bd; background-color: #edf2f8; }
+.objlist li a { display: block; padding: 0.5em 1em; color: #000; text-decoration: none; }
+.objlist li a:hover { background-color: #a7c0de; }
 
 /* form.html */
 .form { margin: 1em; }

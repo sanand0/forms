@@ -154,12 +154,11 @@ A page is a HTML file (or any file, for that matter) that is rendered at a parti
 For example,
 
     "page": {
-        "/":     "home.html",
         "/help": "help.html"
     }
 
-... lets you create two files in the application folder called `home.html` and `help.html`.
-These can contain any text you want. In addition, two variables are passed to the file:
+... lets you create a files in the application folder called `help.html`.
+This can contain any HTML you want. In addition, two variables are passed to the file:
 
 1. `app` -- the application itself (it's pretty much what you specify in `index.js`)
 2. `param` -- the URL query parameters

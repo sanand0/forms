@@ -221,7 +221,6 @@ function main_handler(router) {
     var app = App[request.params.app];
     if (!app) { app = App['default']; return app.render(response, 200, app.draw_page('default/' + App['default'].page['/404'], params)); }
     var params = url.parse(request.url, true).query;
-    var pagename = '/' + (request.params.cls||'');
 
     // Display form
     if (app.form && app.form[request.params.cls]) {
@@ -261,8 +260,8 @@ function main_handler(router) {
     }
 
     // Display page
-    else if (app.page && app.page[pagename]) {
-      app.render(response, 200, app.draw_page(app._name + '/' + app.page[pagename], params));
+    else if (app.page && app.page[request.params.cls]) {
+      app.render(response, 200, app.draw_page(app._name + '/' + app.page[request.params.cls], params));
     }
 
     // If this is the home page, and no page was specified, use the default home page

@@ -1,20 +1,20 @@
 <% if (app.form) { %><h2>Forms</h2>
-<ul id="forms">
+<ul id="forms" class="objlist">
  <% for (var name in app.form) { %>
   <li><a href="/<%= app._name %>/<%= name %>"><%= app.form[name].label || name %></a></li>
  <% } %>
 </ul><% } %>
 
 <% if (app.view) { %><h2>Views</h2>
-<ul id="views">
+<ul id="views" class="objlist">
  <% for (var name in app.view) { %>
   <li><a href="/<%= app._name %>/<%= name %>"><%= app.view[name].label || name %></a></li>
  <% } %>
 </ul><% } %>
 
 <% if (app.page) { %><h2>Pages</h2>
-<ul id="views">
+<ul id="pages" class="objlist">
  <% for (var name in app.page) { if (name !== "/404") { %>
-  <li><a href="/<%= app._name %><%= name %>"><%= name.substr(1) || "Home" %></a></li>
+  <li><a href="/<%= app._name %>/<%= name %>"><%= name || "Home" %></a></li>
  <% } } %>
 </ul><% } %>
