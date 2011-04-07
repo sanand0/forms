@@ -214,8 +214,6 @@ Administration
 
 TODO
 ====
-- Breadcrumb navigation
-- Cancel button <= referer
 - Cache static files
 - Authentication: LDAP, OAuth2
 - Filterable reports with date ranges

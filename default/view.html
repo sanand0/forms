@@ -1,6 +1,11 @@
 <%
 var context = {app:app, view:view, docs:docs};
 
+%><div class="nav">
+ <a class="breadcrumb" href="/<%= app._name %>">Home</a>
+ <a class="breadcrumb" href="/<%= app._name %>/<%= name %>"><%= view.label || name %></a>
+</div><%
+
 if (view.label) { %><h2><%= view.label %></h2><% } %>
 <form method="post" class="view">
  <table>
