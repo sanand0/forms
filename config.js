@@ -9,6 +9,9 @@ module.exports = {
   // Secret key
   secret: 'CZdS25R5MwCPCV0fpbW99NRumWiqRPC8g3MLrndLVZG43rO9YxEl07tcP6ZGLEw',
 
+  // Cache static files for hours
+  cacheHrs: 4,
+
   // Location of the applications folder
   apps_folder: '.'
 };

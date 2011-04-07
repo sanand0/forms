@@ -210,11 +210,11 @@ function main_handler(router) {
   });
 
   router.get('/:filename', function(request, response, next) {
-    connect.static.send(request, response, next, { root: path.join(__dirname, 'default'), path: request.params.filename });
+    connect.static.send(request, response, next, { root: path.join(__dirname, 'default'), path: request.params.filename, maxAge: (config.cacheHrs || 0)*3600*1000 });
   });
 
   router.get('/:app/static/*', function(request, response, next) {
-    connect.static.send(request, response, next, { root: __dirname, path: request.url });
+    connect.static.send(request, response, next, { root: __dirname, path: request.url, maxAge: (config.cacheHrs || 0)*3600*1000 });
   });
 
   router.get('/:app/:cls?/:id?', function(request, response, next) {
