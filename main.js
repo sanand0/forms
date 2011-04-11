@@ -218,12 +218,23 @@ function main_handler(router) {
   });
 
   router.get('/:app/:cls?/:id?', function(request, response, next) {
+    var query = url.parse(request.url, true).query;
     var app = App[request.params.app];
-    if (!app) { app = App['default']; return app.render(response, 200, app.draw_page('default/' + App['default'].page['/404'], params)); }
-    var params = url.parse(request.url, true).query;
+    if (!app) { app = App['default']; return app.render(response, 200, app.draw_page('default/' + App['default'].page['/404'], query)); }
+
+    // Display login
+    if (request.params.cls == 'login') {
+      var login_method = app.login || 'default';
+      // If already logged in, redirect to next
+      if (request.session.login && request.session.login[login_method] && request.session.login[login_method].username) {
+        response.writeHead(302, { 'Location': query.next || '/' + app._name });
+        return response.end();
+      }
+      app.render(response, 200, _.template(utils.readFile('default/login-' + login_method + '.html'), { app:app, request:request, query:query, error:0 }));
+    }
 
     // Display form
-    if (app.form && app.form[request.params.cls]) {
+    else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
         app.db.get(request.params.id, function(err, doc) {
@@ -234,7 +245,7 @@ function main_handler(router) {
           app.render(response, 200, app.draw_form(request.params.cls, form, doc), form);
         });
       } else {
-          app.render(response, 200, app.draw_form(request.params.cls, form, params), form);
+          app.render(response, 200, app.draw_form(request.params.cls, form, query), form);
       }
     }
 
@@ -247,11 +258,11 @@ function main_handler(router) {
       var responses = [], count = 0;
       _(viewlist).each(function(view, index) {
         var sortby = request.params.id || view.fields[0].name;
-        if (sortby[0] == '-') { sortby = sortby.substr(1); params.descending = true; }
-        params.limit = view.limit || 200;
-        app.db.view(viewname + ':' + index + '/' + sortby, params, function(err, viewdata) {
+        if (sortby[0] == '-') { sortby = sortby.substr(1); query.descending = true; }
+        query.limit = view.limit || 200;
+        app.db.view(viewname + ':' + index + '/' + sortby, query, function(err, viewdata) {
           app.db.get(_.pluck(viewdata, 'value'), function(err, docs) {
-            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata, sortby, params);
+            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata, sortby, query);
             if (++count < viewlist.length) { return; }
             app.render(response, 200, responses, view);
           });
@@ -261,12 +272,12 @@ function main_handler(router) {
 
     // Display page
     else if (app.page && app.page[request.params.cls]) {
-      app.render(response, 200, app.draw_page(app._name + '/' + app.page[request.params.cls], params));
+      app.render(response, 200, app.draw_page(app._name + '/' + app.page[request.params.cls], query));
     }
 
     // If this is the home page, and no page was specified, use the default home page
     else if (!request.params.cls) {
-      app.render(response, 200, app.draw_page('default/home.html', params));
+      app.render(response, 200, app.draw_page('default/home.html', query));
     }
 
     // Handle administration functions under /:app/_admin
@@ -284,7 +295,7 @@ function main_handler(router) {
     else {
       var page404 = (app.page && app.page['/404']) ? app._name + '/' + app.page['/404']
                                                    : 'default/' + App['default'].page['/404'];
-      app.render(response, 200, app.draw_page(page404, params));
+      app.render(response, 200, app.draw_page(page404, query));
     }
   });
 
@@ -297,7 +308,21 @@ function main_handler(router) {
     var data = request.body;
     if (!app) { return; }
 
-    if (app.form && app.form[request.params.cls]) {
+    // Display login
+    if (request.params.cls == 'login') {
+      var login_method = app.login || 'default';
+      if (config.users && config.users[request.body.username] == request.body.password) {
+        request.session.login = { username: request.body.username };
+        response.writeHead(302, { 'Location': request.body.next || '/' + app._name });
+        return response.end();
+      } else {
+        app.render(response, 200, _.template(utils.readFile('default/login-' + login_method + '.html'), {
+          app:app, request:request, query:request.body, error:'Invalid username or password'
+        }));
+      }
+    }
+
+    else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
       var redirectOnSuccess = function() {
         var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
@@ -368,6 +393,6 @@ var server = connect(
   connect.cookieParser(),
   connect.session({ secret: config.secret }),
   connect.router(main_handler)
-).listen(8401);
+).listen(config.port);
 
-console.log('Server started');
+console.log('Server started on port ' + config.port);

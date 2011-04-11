@@ -13,5 +13,13 @@ module.exports = {
   cacheHrs: 4,
 
   // Location of the applications folder
-  apps_folder: '.'
+  apps_folder: '.',
+
+  // Application port
+  port: 8401,
+
+  // User list
+  users: {
+    'anonymous': ''
+  }
 };

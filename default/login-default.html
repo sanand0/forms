@@ -1,0 +1,15 @@
+<div class="nav">
+ <a class="breadcrumb" href="/<%= app._name %>">Home</a>
+ <a class="breadcrumb" href="/<%= app._name %>/login">Login</a>
+</div>
+
+<h2>Login</h2>
+<form method="post" class="form">
+ <% if (error) { %><p class="error"><%= error %></p><% } %>
+ <fieldset><dl>
+  <dt><label for="username">User name</label></dt><dd><input name="username" type="text"></dd>
+  <dt><label for="password">Password</label></dt><dd><input name="password" type="password"></dd>
+ </dl></fieldset></div>
+ <input type="hidden" name="next" value="<%= query.next %>">
+ <button type="submit">Log in</button>
+</form>
