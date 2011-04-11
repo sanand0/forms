@@ -311,7 +311,7 @@ function main_handler(router) {
     // Display login
     if (request.params.cls == 'login') {
       var login_method = app.login || 'default';
-      if (config.users && config.users[request.body.username] == request.body.password) {
+      if (config.users && config.users[request.body.username] && config.users[request.body.username].password == request.body.password) {
         request.session.login = { username: request.body.username };
         response.writeHead(302, { 'Location': request.body.next || '/' + app._name });
         return response.end();
