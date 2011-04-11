@@ -83,6 +83,7 @@ An application has the following fields:
 
 - `database`: required. Name of the database to store documents in
 - `template`: required. Name of the template file to use. Create an "index.html" that contains the text `<%= body %>` somewhere in it
+- `login`: optional. A login method. Defaults to `default`. In the future, this will allow `ldap`, `google`, `facebook`, etc.
 - `form`: required. An object containing forms. The key is the form name. The value is a form object (see below)
 - `view`: required. An object containing views. The key is the view name. The value is a view object (see below)
 - `page`: optional. An object containing pages. The key is the page URL. The value is a HTML file that can contain EJS objects (see below)
@@ -154,7 +155,7 @@ A page is a HTML file (or any file, for that matter) that is rendered at a parti
 For example,
 
     "page": {
-        "/help": "help.html"
+        "help": "help.html"
     }
 
 ... lets you create a files in the application folder called `help.html`.
@@ -213,7 +214,7 @@ Administration
 
 TODO
 ====
-- Authentication: LDAP, OAuth2
+- Authentication: Custom, LDAP, OAuth2
 - Filterable reports with date ranges
 - Reports on order flows
 - Computed fields in views (e.g. totals)

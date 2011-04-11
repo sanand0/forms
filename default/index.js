@@ -2,7 +2,7 @@
   "database": "default",
 
   "page": {
-    "/404"  : "404.html",
-    "/build": "build.html"
+    "404"  : "404.html",
+    "build": "build.html"
   }
 }

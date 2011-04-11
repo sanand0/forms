@@ -220,7 +220,7 @@ function main_handler(router) {
   router.get('/:app/:cls?/:id?', function(request, response, next) {
     var query = url.parse(request.url, true).query;
     var app = App[request.params.app];
-    if (!app) { app = App['default']; return app.render(response, 200, app.draw_page('default/' + App['default'].page['/404'], query)); }
+    if (!app) { app = App['default']; return app.render(response, 200, app.draw_page('default/' + App['default'].page['404'], query)); }
 
     // Display login
     if (request.params.cls == 'login') {
@@ -293,8 +293,8 @@ function main_handler(router) {
     }
 
     else {
-      var page404 = (app.page && app.page['/404']) ? app._name + '/' + app.page['/404']
-                                                   : 'default/' + App['default'].page['/404'];
+      var page404 = (app.page && app.page['404']) ? app._name + '/' + app.page['404']
+                                                   : 'default/' + App['default'].page['404'];
       app.render(response, 200, app.draw_page(page404, query));
     }
   });
