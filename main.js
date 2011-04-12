@@ -137,11 +137,11 @@ _.extend(Application.prototype, {
     console.log(this._name, msg, err, data || '');
   },
 
-  draw_page: function(page, param) {
+  draw_page: function(page, query) {
     var file = (this.page && page in this.page) ?
                   path.join(this._name, this.page[page]) :
                   path.join(App['default']._name, App['default'].page[page] || App['default'].page['404']);
-    return _.template(utils.readFile(file), {app:this, param:param || {}, _:_});
+    return _.template(utils.readFile(file), {app:this, query:query || {}, _:_});
   },
 
   draw_form: function(name, data, errors) {

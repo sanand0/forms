@@ -159,19 +159,29 @@ For example,
     }
 
 ... lets you create a files in the application folder called `help.html`.
-This can contain any HTML you want. In addition, two variables are passed to the file:
+
+There are two "special" pages that you can override -- the home page and the 404 error page.
+To specify a home page, use an empty string. To specify an error page, use "404".
+
+    "page": {
+        ""    : "home.html",
+        "404" : "404.html"
+    }
+
+You can use [EJS templates](http://documentcloud.github.com/underscore/#template) in these files.
+For example, this `home.html` will show all forms:
+
+    <h2>Forms</h2>
+    <% for (var form in app.forms) { %>
+      <p><%= form %></p>
+    <% } %>
+
+The following variables are passed to the file:
 
 1. `app` -- the application itself (it's pretty much what you specify in `index.js`)
 2. `param` -- the URL query parameters
 3. `_` -- [underscore.js](http://documentcloud.github.com/underscore/)
 
-You can use [EJS templates](http://documentcloud.github.com/underscore/#template) to create
-templates using these variables. For example, this code in `home.html` will show all forms:
-
-    <h2>Forms</h2>
-    <% for (var form in app.forms) { %>
-      <p><%= form %>
-    <% } %>
 
 URLs
 ====
@@ -232,3 +242,7 @@ TODO
 - Bulk exports and import
 
 Custom views: Frequency, statistics, trends
+
+1. If no permissions, we're fine
+2. If permissions, if not logged in, redirect to /app/login?next={{ request.url }}
+3. If permissions, if login, check if access is there
