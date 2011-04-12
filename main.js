@@ -129,6 +129,9 @@ function design_app(app) {
     }
   );
 
+  // Set a default login method
+  if (!app.login) { app.login = 'default'; }
+
   return app;
 };
 
@@ -171,6 +174,17 @@ _.extend(Application.prototype, {
       static_url: function(path) { return '/' + app._name + '/static/' + path; },
       body: _.isArray(params) ? params.join('') : params
     })));
+  },
+
+  can: function(operation, object, session) {
+    if (!object.permissions) { return true; }
+    var perms = object.permissions[operation];
+    if (!perms) { return true; }
+    if (!session || !session.login || !session.login[this.login]) { return false; }
+    if (_.contains(perms, 'all')) { return true; }
+    if (_.contains(perms, session.login[this.login].username)) { return true; }
+    if (_.intersect(session.login[this.login].role, perms).length > 0) { return true; }
+    return false;
   },
 
   validate: function(formname, data) {
@@ -227,19 +241,21 @@ function main_handler(router) {
 
     // Display login
     if (request.params.cls == 'login') {
-      var login_method = app.login || 'default';
+      // Log out if requested
+      if (query.logout && request.session.login && request.session.login[app.login]) { delete request.session.login[app.login]; }
       // If already logged in, redirect to next
-      if (request.session.login && request.session.login[login_method] && request.session.login[login_method].username) {
+      if (request.session.login && request.session.login[app.login] && request.session.login[app.login].username) {
         response.writeHead(302, { 'Location': query.next || '/' + app._name });
         return response.end();
       }
-      app.render(response, 200, _.template(utils.readFile('default/login-' + login_method + '.html'), { app:app, request:request, query:query, error:0 }));
+      app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), { app:app, request:request, query:query, error:0 }));
     }
 
     // Display form
     else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
+        if (!app.can('read', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'read' })); }
         app.db.get(request.params.id, function(err, doc) {
           if (err) {
             app.error('Error loading doc:', err, doc);
@@ -248,7 +264,8 @@ function main_handler(router) {
           app.render(response, 200, app.draw_form(request.params.cls, doc), form);
         });
       } else {
-          app.render(response, 200, app.draw_form(request.params.cls, query), form);
+        if (!app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'create' })); }
+        app.render(response, 200, app.draw_form(request.params.cls, query), form);
       }
     }
 
@@ -306,20 +323,23 @@ function main_handler(router) {
 
     // Display login
     if (request.params.cls == 'login') {
-      var login_method = app.login || 'default';
-      if (config.users && config.users[request.body.username] && config.users[request.body.username].password == request.body.password) {
-        request.session.login = { username: request.body.username };
-        response.writeHead(302, { 'Location': request.body.next || '/' + app._name });
-        return response.end();
-      } else {
-        app.render(response, 200, _.template(utils.readFile('default/login-' + login_method + '.html'), {
-          app:app, request:request, query:request.body, error:'Invalid username or password'
-        }));
+      if (app.login == 'default') {
+        if (config.users && config.users[request.body.username] && config.users[request.body.username].password == request.body.password) {
+          request.session.login = request.session.login || {};
+          request.session.login[app.login] = _.extend({ username: request.body.username }, config.users[request.body.username]);
+          response.writeHead(302, { 'Location': request.body.next || '/' + app._name });
+          return response.end();
+        }
       }
+      app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), {
+        app:app, request:request, query:request.body, error:'Invalid username or password'
+      }));
     }
 
     else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
+      if ( data._id && !app.can('update', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'update' })); }
+      if (!data._id && !app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'create' })); }
       var redirectOnSuccess = function() {
         var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
         response.writeHead(302, { 'Location': url });

@@ -201,8 +201,8 @@ URLs
 Authentication
 ==============
 Three forms of authentication will be supported:
-1. LDAP
-2. Custom
+1. Custom
+2. LDAP
 3. Google/Yahoo/Facebook/Twitter
 
 Permissions may be given to users to Create, Read, Update or Delete (CRUD) forms.
@@ -213,7 +213,7 @@ The following groups have a special meaning:
     - `author` indicates the author of the document
     - `admin` indicates one of the administrators
 
-For example:
+For example, a form may have:
     "permissions": {
       "create": ["all"],
       "read"  : ["all"],
