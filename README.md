@@ -83,6 +83,8 @@ An application has the following fields:
 
 - `database`: required. Name of the database to store documents in
 - `template`: required. Name of the template file to use. Create an "index.html" that contains the text `<%= body %>` somewhere in it
+- `label`: optional. Display name of the application
+- `description`: optional. A description of the application
 - `login`: optional. A login method. Defaults to `default`. In the future, this will allow `ldap`, `google`, `facebook`, etc.
 - `form`: required. An object containing forms. The key is the form name. The value is a form object (see below)
 - `view`: required. An object containing views. The key is the view name. The value is a view object (see below)
@@ -93,6 +95,7 @@ Form objects
 Each "form" object contains the following fields:
 
 - `label`: optional. A display name for the form
+- `description`: optional. A summary of the form
 - `fields`: required. A list of fields. Fields can have:
 
     - `name`: required. The field name. Just stick to letters (preferably lowercase), numbers and underscore. No spaces.
@@ -131,6 +134,7 @@ View objects
 Each "view" object contains the following fields:
 
 - `label`: optional. A display name for the view
+- `description`: optional. A summary of the view
 - `template`: optional. A template file to use from the application's template list.
    Use a .html file to create a HTML view, and .csv file to create a .csv view.
    These are the only two types currently supported.

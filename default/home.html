@@ -1,14 +1,14 @@
 <% if (app.form) { %><h2>Forms</h2>
 <ul id="forms" class="objlist">
  <% for (var name in app.form) { %>
-  <li><a href="/<%= app._name %>/<%= name %>"><%= app.form[name].label || name %></a></li>
+  <li><a href="/<%= app._name %>/<%= name %>" title="<%= app.form[name].description || "" %>"><%= app.form[name].label || name %></a></li>
  <% } %>
 </ul><% } %>
 
 <% if (app.view) { %><h2>Views</h2>
 <ul id="views" class="objlist">
  <% for (var name in app.view) { %>
-  <li><a href="/<%= app._name %>/<%= name %>"><%= app.view[name].label || name %></a></li>
+  <li><a href="/<%= app._name %>/<%= name %>" title="<%= app.view[name].description || "" %>"><%= app.view[name].label || name %></a></li>
  <% } %>
 </ul><% } %>
 

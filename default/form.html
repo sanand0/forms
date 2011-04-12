@@ -4,10 +4,11 @@ var context = {app:app, form:form, doc:doc};
 %><div class="nav">
  <a class="breadcrumb" href="/<%= app._name %>">Home</a>
  <a class="breadcrumb" href="/<%= app._name %>/<%= name %>"><%= form.label || name %></a>
- <% if (doc) { %><a class="breadcrumb" href="/<%= app._name %>/<%= name %>/<%= doc._id %>">This document</a><% } %>
+ <% if (doc && doc._id) { %><a class="breadcrumb" href="/<%= app._name %>/<%= name %>/<%= doc._id %>">This document</a><% } %>
 </div><%
 
 if (form.label) { %><h2><%= form.label %></h2><% }
+if (form.description) { %><p><%= form.description %></p><% }
  %><form method="post" class="form"><%
  if (doc && doc._id) { %><input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/><% }
   for (var index=0, field; field=form.fields[index]; index++) { %>

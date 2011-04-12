@@ -2,7 +2,7 @@
  <h1>Application list</h1>
  <ul>
   <% for (var name in App) { if (name !== "default") { %>
-   <li><a href="/<%= name %>"><%= name %></a></li>
+   <li><a href="/<%= name %>" title="<%= App[name].description || "" %>"><%= App[name].label || name %></a></li>
   <% } } %>
  </ul>
 </div>

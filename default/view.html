@@ -6,8 +6,9 @@ var context = {app:app, view:view, docs:docs};
  <a class="breadcrumb" href="/<%= app._name %>/<%= name %>"><%= view.label || name %></a>
 </div><%
 
-if (view.label) { %><h2><%= view.label %></h2><% } %>
-<form method="post" class="view">
+if (view.label) { %><h2><%= view.label %></h2><% }
+if (view.description) { %><p><%= view.description %></p><% }
+%><form method="post" class="view">
  <table>
   <thead><tr><th></th><%
     for (var i=0, field; field=view.fields[i]; i++) { var sorted = (field.name == sortby) ? (options.descending ? "descending" : "ascending") : "";
