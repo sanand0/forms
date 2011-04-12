@@ -141,8 +141,8 @@ _.extend(Application.prototype, {
     return _.template(utils.readFile(page), {app:this, param:param || {}, _:_});
   },
 
-  draw_form: function(name, form, data, errors) {
-    return _.template(utils.readFile('default/form.html'), {name:name, form:form, doc:data, errors:errors || {}, app:this, _:_});
+  draw_form: function(name, data, errors) {
+    return _.template(utils.readFile('default/form.html'), {name:name, form:this.form[name], doc:data, errors:errors || {}, app:this, _:_});
   },
 
   draw_view: function(name, view, docs, viewdata, sortby, options) {
@@ -242,10 +242,10 @@ function main_handler(router) {
             app.error('Error loading doc:', err, doc);
             return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
           }
-          app.render(response, 200, app.draw_form(request.params.cls, form, doc), form);
+          app.render(response, 200, app.draw_form(request.params.cls, doc), form);
         });
       } else {
-          app.render(response, 200, app.draw_form(request.params.cls, form, query), form);
+          app.render(response, 200, app.draw_form(request.params.cls, query), form);
       }
     }
 
@@ -331,7 +331,7 @@ function main_handler(router) {
       };
       var errors = app.validate(request.params.cls, data);
       if (errors) {
-        return app.render(response, 200, app.draw_form(request.params.cls, form, data, errors));
+        return app.render(response, 200, app.draw_form(request.params.cls, data, errors));
       }
       app.db.get(data._id, function(err, original) {
         var changes = _.reduce(data, function(memo, val, key) {
