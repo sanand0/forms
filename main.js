@@ -138,7 +138,10 @@ _.extend(Application.prototype, {
   },
 
   draw_page: function(page, param) {
-    return _.template(utils.readFile(page), {app:this, param:param || {}, _:_});
+    var file = (this.page && page in this.page) ?
+                  path.join(this._name, this.page[page]) :
+                  path.join(App['default']._name, App['default'].page[page] || App['default'].page['404']);
+    return _.template(utils.readFile(file), {app:this, param:param || {}, _:_});
   },
 
   draw_form: function(name, data, errors) {
@@ -151,8 +154,8 @@ _.extend(Application.prototype, {
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
-  //    app.render(response, 200, 'abc', templatename)
-  //    app.render(response, 200, ['abc', 'def'], templatename)
+  //    app.render(response, 200, 'abc', form_or_view_or_page)
+  //    app.render(response, 200, ['abc', 'def'], form_or_view_or_page)
   render: function(response, code, params, object) {
     var app = this;
     templatename = (object && object.template) ? object.template : (app.template || '../default/index.html');
@@ -220,7 +223,7 @@ function main_handler(router) {
   router.get('/:app/:cls?/:id?', function(request, response, next) {
     var query = url.parse(request.url, true).query;
     var app = App[request.params.app];
-    if (!app) { app = App['default']; return app.render(response, 200, app.draw_page('default/' + App['default'].page['404'], query)); }
+    if (!app) { return App['default'].render(response, 200, App['default'].draw_page('404', query)); }
 
     // Display login
     if (request.params.cls == 'login') {
@@ -270,14 +273,9 @@ function main_handler(router) {
       });
     }
 
-    // Display page
-    else if (app.page && app.page[request.params.cls]) {
-      app.render(response, 200, app.draw_page(app._name + '/' + app.page[request.params.cls], query));
-    }
-
-    // If this is the home page, and no page was specified, use the default home page
-    else if (!request.params.cls) {
-      app.render(response, 200, app.draw_page('default/home.html', query));
+    // Display page (or if none is specified, then draw the home page)
+    else if (!request.params.cls || (app.page && app.page[request.params.cls])) {
+      app.render(response, 200, app.draw_page(request.params.cls || '', query));
     }
 
     // Handle administration functions under /:app/_admin
@@ -293,9 +291,7 @@ function main_handler(router) {
     }
 
     else {
-      var page404 = (app.page && app.page['404']) ? app._name + '/' + app.page['404']
-                                                   : 'default/' + App['default'].page['404'];
-      app.render(response, 200, app.draw_page(page404, query));
+      app.render(response, 200, app.draw_page('404', query));
     }
   });
 
