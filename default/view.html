@@ -1,5 +1,6 @@
 <%
 var context = {app:app, view:view, docs:docs};
+var candelete = app.can("delete", app.form[view.form], request.session);
 
 %><div class="nav">
  <a class="breadcrumb" href="/<%= app._name %>">Home</a>
@@ -31,7 +32,7 @@ if (view.description) { %><p><%= view.description %></p><% }
   %></td></tr>
   </tbody>
  </table>
- <button name="delete" type="submit">Delete</button>
+ <% if (candelete) { %><button name="delete" type="submit">Delete</button><% } %>
 </form>
 
 <% if (view.actions) { %>
