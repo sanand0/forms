@@ -176,14 +176,16 @@ _.extend(Application.prototype, {
     })));
   },
 
-  can: function(operation, object, session) {
+  can: function(operation, object, session, doc) {
     if (!object.permissions) { return true; }
     var perms = object.permissions[operation];
     if (!perms) { return true; }
     if (!session || !session.login || !session.login[this.login]) { return false; }
+    var user = session.login[this.login];
     if (_.contains(perms, 'all')) { return true; }
-    if (_.contains(perms, session.login[this.login].username)) { return true; }
-    if (_.intersect(session.login[this.login].role, perms).length > 0) { return true; }
+    if (_.contains(perms, 'author') && doc && doc[':user'] && doc[':user'] == user.username) { return true; }
+    if (_.contains(perms, user.username)) { return true; }
+    if (_.intersect(user.role, perms).length > 0) { return true; }
     return false;
   },
 
@@ -255,12 +257,12 @@ function main_handler(router) {
     else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
-        if (!app.can('read', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'read' }})); }
         app.db.get(request.params.id, function(err, doc) {
           if (err) {
             app.error('Error loading doc:', err, doc);
             return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
           }
+          if (!app.can('read', form, request.session, doc)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'read' }})); }
           app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls, doc:doc}), form);
         });
       } else {
@@ -338,7 +340,6 @@ function main_handler(router) {
 
     else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
-      if ( data._id && !app.can('update', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'update' }})); }
       if (!data._id && !app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'create' }})); }
       var redirectOnSuccess = function() {
         var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
@@ -350,6 +351,7 @@ function main_handler(router) {
         return app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls, doc:data, errors:errors}));
       }
       app.db.get(data._id, function(err, original) {
+        if (data._id && !app.can('update', form, request.session, original)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'update' }})); }
         var changes = _.reduce(data, function(memo, val, key) {
           if (key[0] !== '_' && key[0] !== ':' && original[key] !== val) { memo.push([key, original[key], val]); }
           return memo;

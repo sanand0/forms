@@ -1,6 +1,6 @@
 <%
 var context = {app:app, form:form, doc:doc};
-var canchange = (doc && doc._id) ? app.can("update", form, request.session) : app.can("create", form, request.session);
+var canchange = (doc && doc._id) ? app.can("update", form, request.session, doc) : app.can("create", form, request.session);
 
 %><div class="nav">
  <a class="breadcrumb" href="/<%= app._name %>">Home</a>
