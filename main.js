@@ -142,8 +142,8 @@ _.extend(Application.prototype, {
 
   draw_page: function(options) {
     var file = (this.page && options.name in this.page) ?
-                  path.join(this._name, this.page[options.name]) :
-                  path.join(App['default']._name, App['default'].page[options.name] || App['default'].page['404']);
+                  path.join(this._name, this.page[options.name].file) :
+                  path.join(App['default']._name, App['default'].page[options.name].file || App['default'].page['404'].file);
     return _.template(utils.readFile(file), _({app:this, _:_}).extend(options));
   },
 

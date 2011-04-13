@@ -127,6 +127,7 @@ Each "form" object contains the following fields:
 - `actions`: optional. A list of actions to display along with the documents. Actions can have:
     - `label`: required. The text to display for the action (templates using the variables `app`, `form` or `doc` allowed)
     - `url`: The link to visit when the action is clicked (templates using the variables `app`, `form` or `doc` allowed)
+- `permissions`: optional. Permissions for the form. See the permissions section below
 - `template`: optional. A template name to use from the application's template list. Defaults to `default`
 
 View objects
@@ -159,17 +160,27 @@ A page is a HTML file (or any file, for that matter) that is rendered at a parti
 For example,
 
     "page": {
-        "help": "help.html"
+      "help": {
+        "file": "help.html"
+        "label": "Help page",
+        "description": "Provides help for this application",
+      }
     }
 
 ... lets you create a files in the application folder called `help.html`.
 
-There are two "special" pages that you can override -- the home page and the 404 error page.
-To specify a home page, use an empty string. To specify an error page, use "404".
+Each page object can contain the following fields:
+
+- `file`: required. The name of the file to display. The file location is relative to the application folder
+- `label`: optional. A display name for the page
+- `description`: optional. A summary of the page
+
+There are three "special" pages that you can override:
 
     "page": {
-        ""    : "home.html",
-        "404" : "404.html"
+        ""    : { file: "home.html" },
+        "403" : { file: "forbidden.html" },
+        "404" : { file: "not_found.html" },
     }
 
 You can use [EJS templates](http://documentcloud.github.com/underscore/#template) in these files.
@@ -228,17 +239,14 @@ Administration
 
 TODO
 ====
-- Authentication: Custom, LDAP, OAuth2
+- Authentication: LDAP, OAuth2
 - Filterable reports with date ranges
 - Reports on order flows
 - Computed fields in views (e.g. totals)
 - Search
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
-
 - App builder. Pure Javascript. Just use a JSON editor.
-
 - View count
-
 - Access control
 - Email integration & workflow
 - External integration (e.g. JIRA)
@@ -246,7 +254,3 @@ TODO
 - Bulk exports and import
 
 Custom views: Frequency, statistics, trends
-
-1. If no permissions, we're fine
-2. If permissions, if not logged in, redirect to /app/login?next={{ request.url }}
-3. If permissions, if login, check if access is there

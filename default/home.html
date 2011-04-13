@@ -14,7 +14,7 @@
 
 <% if (app.page) { %><h2>Pages</h2>
 <ul id="pages" class="objlist">
- <% for (var name in app.page) { if (name && name !== "404") { %>
-  <li><a href="/<%= app._name %>/<%= name %>"><%= name || "Home" %></a></li>
+ <% for (var name in app.page) { if (name && !name.match(/\d\d\d/)) { %>
+  <li><a href="/<%= app._name %>/<%= name %>" title="<%= app.page[name].description || "" %>"><%= app.page[name].label || name %></a></li>
  <% } } %>
 </ul><% } %>
