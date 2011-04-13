@@ -357,12 +357,14 @@ function main_handler(router) {
 
         if (_(changes).keys().length === 0) { return redirectOnSuccess(); }
 
-        // Add metadata. TODO: author
         data[':form'] = request.params.cls;
+        if (request.session && request.session.login && request.session.login[app.login]) {
+          data[':user'] = request.session.login[app.login].username || '';
+        }
         data[':updated'] = new Date();
         data[':history'] = original[':history'] || [];
         data[':history'].unshift({
-          // 'who': TODO
+          ':user': data[':user'],
           ':updated': data[':updated'],
           ':fields': changes
         });

@@ -74,7 +74,7 @@ if (form.description) { %><p><%= form.description %></p><% }
 <h2>Changes</h2>
 <ol>
  <% for (var i=0, change; change=doc[":history"][i]; i++) { %>
-  <li>On <%= change[":updated"] %>:
+  <li>On <%= new Date(Date.parse(change[":updated"])).toString() %><% if (change[":user"]) { %>, <%= change[":user"] %> changed<% } %>:
    <ul>
     <% for (var j=0, field; field=change[":fields"][j]; j++) { %>
      <li><%= field[0] %>: <del><%= field[1] %></del> <ins><%= field[2] %></ins></li>
