@@ -11,7 +11,7 @@ if (view.description) { %><p><%= view.description %></p><% }
 %><form method="post" class="view">
  <table>
   <thead><tr><th></th><%
-    for (var i=0, field; field=view.fields[i]; i++) { var sorted = (field.name == sortby) ? (options.descending ? "descending" : "ascending") : "";
+    for (var i=0, field; field=view.fields[i]; i++) { var sorted = (field.name == sortby) ? (query.descending ? "descending" : "ascending") : "";
       %><th><a href="/<%= app._name %>/<%= name %>/<%= (sorted == "ascending") ? "-" + field.name : field.name %>"><%= field.label %><%= sorted == "ascending" ? "&#160;&#x25b2;" : sorted == "descending" ? "&#160;&#x25bc;" : "" %></a><!-- br><input name="<%= field.name %>" --></th><%
     }
   %></tr></thead><tbody><%

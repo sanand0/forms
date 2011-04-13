@@ -140,20 +140,20 @@ _.extend(Application.prototype, {
     console.log(this._name, msg, err, data || '');
   },
 
-  draw_page: function(page, query) {
-    var file = (this.page && page in this.page) ?
-                  path.join(this._name, this.page[page]) :
-                  path.join(App['default']._name, App['default'].page[page] || App['default'].page['404']);
-    return _.template(utils.readFile(file), {app:this, query:query || {}, _:_});
+  draw_page: function(options) {
+    var file = (this.page && options.name in this.page) ?
+                  path.join(this._name, this.page[options.name]) :
+                  path.join(App['default']._name, App['default'].page[options.name] || App['default'].page['404']);
+    return _.template(utils.readFile(file), _({app:this, _:_}).extend(options));
   },
 
-  draw_form: function(name, data, errors) {
-    return _.template(utils.readFile('default/form.html'), {name:name, form:this.form[name], doc:data, errors:errors || {}, app:this, _:_});
+  draw_form: function(options) {
+    return _.template(utils.readFile('default/form.html'), _({app:this, _:_, errors:{}, doc:options.query, form:this.form[options.name]}).extend(options));
   },
 
-  draw_view: function(name, view, docs, viewdata, sortby, options) {
-    var ext = view.template ? path.extname(view.template) : '.html';
-    return _.template(utils.readFile('default/view' + ext), {name:name, view:view, docs:docs, app:this, viewdata:viewdata, sortby:sortby, options:options, _:_});
+  draw_view: function(options) {
+    var ext = options.view.template ? path.extname(options.view.template) : '.html';
+    return _.template(utils.readFile('default/view' + ext), _({app:this, _:_}).extend(options));
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
@@ -237,7 +237,7 @@ function main_handler(router) {
   router.get('/:app/:cls?/:id?', function(request, response, next) {
     var query = url.parse(request.url, true).query;
     var app = App[request.params.app];
-    if (!app) { return App['default'].render(response, 200, App['default'].draw_page('404', query)); }
+    if (!app) { return App['default'].render(response, 200, App['default'].draw_page({request:request, query:query, name:'404'})); }
 
     // Display login
     if (request.params.cls == 'login') {
@@ -255,17 +255,17 @@ function main_handler(router) {
     else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
       if (request.params.id !== undefined) {
-        if (!app.can('read', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'read' })); }
+        if (!app.can('read', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'read' }})); }
         app.db.get(request.params.id, function(err, doc) {
           if (err) {
             app.error('Error loading doc:', err, doc);
             return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
           }
-          app.render(response, 200, app.draw_form(request.params.cls, doc), form);
+          app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls, doc:doc}), form);
         });
       } else {
-        if (!app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'create' })); }
-        app.render(response, 200, app.draw_form(request.params.cls, query), form);
+        if (!app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'create' }})); }
+        app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls}), form);
       }
     }
 
@@ -279,10 +279,10 @@ function main_handler(router) {
       _(viewlist).each(function(view, index) {
         var sortby = request.params.id || view.fields[0].name;
         if (sortby[0] == '-') { sortby = sortby.substr(1); query.descending = true; }
-        query.limit = view.limit || 200;
+        query.limit = query.limit || view.limit || 200;
         app.db.view(viewname + ':' + index + '/' + sortby, query, function(err, viewdata) {
           app.db.get(_.pluck(viewdata, 'value'), function(err, docs) {
-            responses[index] = app.draw_view(request.params.cls, view, _.pluck(docs, 'doc'), viewdata, sortby, query);
+            responses[index] = app.draw_view({request:request, query:query, name:request.params.cls, view:view, docs:_.pluck(docs, 'doc'), viewdata:viewdata, sortby:sortby});
             if (++count < viewlist.length) { return; }
             app.render(response, 200, responses, view);
           });
@@ -292,7 +292,7 @@ function main_handler(router) {
 
     // Display page (or if none is specified, then draw the home page)
     else if (!request.params.cls || (app.page && app.page[request.params.cls])) {
-      app.render(response, 200, app.draw_page(request.params.cls || '', query));
+      app.render(response, 200, app.draw_page({request:request, query:query, name:request.params.cls || ''}));
     }
 
     // Handle administration functions under /:app/_admin
@@ -308,7 +308,7 @@ function main_handler(router) {
     }
 
     else {
-      app.render(response, 200, app.draw_page('404', query));
+      app.render(response, 200, app.draw_page({request:request, name:'404', query:query}));
     }
   });
 
@@ -338,8 +338,8 @@ function main_handler(router) {
 
     else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
-      if ( data._id && !app.can('update', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'update' })); }
-      if (!data._id && !app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page('403', { 'operation': 'create' })); }
+      if ( data._id && !app.can('update', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'update' }})); }
+      if (!data._id && !app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'create' }})); }
       var redirectOnSuccess = function() {
         var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
         response.writeHead(302, { 'Location': url });
@@ -347,7 +347,7 @@ function main_handler(router) {
       };
       var errors = app.validate(request.params.cls, data);
       if (errors) {
-        return app.render(response, 200, app.draw_form(request.params.cls, data, errors));
+        return app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls, doc:data, errors:errors}));
       }
       app.db.get(data._id, function(err, original) {
         var changes = _.reduce(data, function(memo, val, key) {
@@ -372,32 +372,31 @@ function main_handler(router) {
             app.error('Error saving doc:', err, data);
             return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
           }
-          redirectOnSuccess();
+          return redirectOnSuccess();
         });
       });
     }
 
     if (app.view && app.view[request.params.cls]) {
       var view = app.view[request.params.cls];
-      if (typeof data['delete'] !== 'undefined') {
-        _(data).each(function(val, key) {
-          var parts = key.split(':');
-          if (parts[0] == 'doc') {
-            app.db.remove(parts[1], parts[2], function(err, data) {
-              if (!err) {
-                var url = (view.actions && view.actions.onDelete) ? '/' + app._name + view.actions.onDelete : request.url;
-                response.writeHead(302, { 'Location': url });
-                response.end();
-              } else {
-                app.error('Error saving multiview:', err, data);
-                app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
-              }
-            });
-          }
-        });
-      } else {
-        response.end('TODO: What do I do with: ' + JSON.stringify(data));
+      if (typeof data['delete'] == 'undefined') {
+        return response.end('TODO: What do I do with: ' + JSON.stringify(data));
       }
+      _(data).each(function(val, key) {
+        var parts = key.split(':');
+        if (parts[0] == 'doc') {
+          app.db.remove(parts[1], parts[2], function(err, data) {
+            if (!err) {
+              var url = (view.actions && view.actions.onDelete) ? '/' + app._name + view.actions.onDelete : request.url;
+              response.writeHead(302, { 'Location': url });
+              return response.end();
+            } else {
+              app.error('Error saving multiview:', err, data);
+              return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
+            }
+          });
+        }
+      });
     }
   });
 
