@@ -3,6 +3,7 @@ var http = require('http');
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
+var spawn = require('child_process').spawn;
 
 // Third-party node modules
 var _ = require('underscore');          // Functional programming & templates
@@ -38,7 +39,11 @@ _.safetemplate = function(str, data) {
 };
 
 // Connect to the database.
-var couch = new cradle.Connection(config.couchdb || {});
+try {
+  var couch = new cradle.Connection(config.couchdb || {});
+} catch(e) {
+  console.log("Unable to connect to CouchDB", JSON.stringify(e))
+}
 
 // Define Apps
 // ------------
@@ -176,6 +181,7 @@ _.extend(Application.prototype, {
     })));
   },
 
+  // Ensures that the operation can be performed based on object.permissions
   can: function(operation, object, session, doc) {
     if (!object.permissions) { return true; }
     var perms = object.permissions[operation];
@@ -325,17 +331,33 @@ function main_handler(router) {
 
     // Display login
     if (request.params.cls == 'login') {
+      var success = function(user) {
+        request.session.login = request.session.login || {};
+        request.session.login[app.login] = user;
+        response.writeHead(302, { 'Location': request.body.next || '/' + app._name });
+        return response.end();
+      };
+      var failure = function() {
+        app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), {
+          app:app, request:request, query:data, error:'Login failed'
+        }));
+      };
       if (app.login == 'default') {
-        if (config.users && config.users[request.body.username] && config.users[request.body.username].password == request.body.password) {
-          request.session.login = request.session.login || {};
-          request.session.login[app.login] = _.extend({ username: request.body.username }, config.users[request.body.username]);
-          response.writeHead(302, { 'Location': request.body.next || '/' + app._name });
-          return response.end();
+        var userlist = (config.login && config.login['default']) || {};
+        if (userlist[request.body.username] && userlist[request.body.username].password == request.body.password) {
+          success(_.extend({ username: request.body.username }, userlist[request.body.username]));
+        } else {
+          failure();
         }
+      } else if (app.login == 'windows') {
+        var params = (config.login && config.login['windows']) || {};
+        // auth via http://www.joeware.net/freetools/tools/auth/index.htm
+        var cmd = spawn('auth.exe', ['/d:' + request.body.domain || params.domain, '/u:' + request.body.username, '/p:' + request.body.password]).on('exit', function(code) {
+          if (code) { success({ username: request.body.username.toLowerCase() }); }
+          else { failure(); }
+        });
+        cmd.stdin.end();
       }
-      app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), {
-        app:app, request:request, query:request.body, error:'Invalid username or password'
-      }));
     }
 
     else if (app.form && app.form[request.params.cls]) {
@@ -348,7 +370,7 @@ function main_handler(router) {
       };
       var errors = app.validate(request.params.cls, data);
       if (errors) {
-        return app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls, doc:data, errors:errors}));
+        return app.render(response, 200, app.draw_form({request:request, query:data, name:request.params.cls, doc:data, errors:errors}));
       }
       app.db.get(data._id, function(err, original) {
         if (data._id && !app.can('update', form, request.session, original)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'update' }})); }
@@ -381,7 +403,7 @@ function main_handler(router) {
       });
     }
 
-    if (app.view && app.view[request.params.cls]) {
+    else if (app.view && app.view[request.params.cls]) {
       var view = app.view[request.params.cls];
       if (typeof data['delete'] == 'undefined') {
         return response.end('TODO: What do I do with: ' + JSON.stringify(data));

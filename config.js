@@ -18,9 +18,16 @@ module.exports = {
   // Application port
   port: 8401,
 
-  // User list
-  users: {
-    "anonymous": { "password": "", "role": [] },
-    "admin": { "password": "admin", "role": ["admin"] },
+  login: {
+    // User list
+    "default": {
+      "anonymous": { "password": "", "role": [] },
+      "admin": { "password": "admin", "role": ["admin"] },
+    },
+
+    "windows": {
+      "domain": "itlinfosys.com"
+    }
   }
+
 };

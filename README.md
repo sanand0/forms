@@ -225,6 +225,7 @@ The following groups have a special meaning:
     - `admin` indicates one of the administrators
 
 For example, a form may have:
+
     "permissions": {
       "create": ["all"],
       "read"  : ["all"],
@@ -240,17 +241,21 @@ Administration
 TODO
 ====
 - Authentication: LDAP, OAuth2
+- Hierarchical categories
 - Filterable reports with date ranges
 - Reports on order flows
-- Computed fields in views (e.g. totals)
 - Search
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
-- App builder. Pure Javascript. Just use a JSON editor.
 - View count
 - Access control
 - Email integration & workflow
 - External integration (e.g. JIRA)
 - Multiedit
 - Bulk exports and import
+* App builder. Pure Javascript. Just use a JSON editor.
+* Computed fields in views (e.g. totals)
+* RSS feeds
+* Test scripts
 
 Custom views: Frequency, statistics, trends
+
