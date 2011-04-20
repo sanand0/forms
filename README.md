@@ -209,13 +209,38 @@ URLs
 - /sample/view/-name is the *view* sorted by the name *field* (descending)
 - /sample/static/common.js is a static file common.js served from the /sample/static folder
 
-Authentication
-==============
-Three forms of authentication will be supported:
-1. Custom
-2. LDAP
-3. Google/Yahoo/Facebook/Twitter
+Configuration
+=============
+`config.js` configures all applications in an installation. It contains the following keys:
 
+- `port`: required. The port on which the applications should run (e.g. 8401)
+- `couchdb`: optional. An object that holds the CouchDB host, port, and any other [cradle](https://github.com/cloudhead/cradle) parameters
+- `secret`: optional. A random string to secure cookies
+- `cacheHrs`: optional. Number of hours to cache static files for
+- `apps_folder`: optional. Location of the apps folder
+- `login`: optional. Login credentials. It contains a key for each login mechanism. For example:
+
+    login: {
+      "default": {
+        "anonymous": { "password": "", "role": [] },
+        "admin": { "password": "admin", "role": ["admin"] },
+      },
+
+      "windows": {
+        "domain": "itlinfosys.com"
+      }
+    }
+
+
+Login
+=====
+Each application can specify one of the following login mechanisms via the `login` key.
+
+1. `login: "default"`: This is the default login mechanism (i.e. this is used if no login is specified). It uses the login.default user list from config.js
+2. `login: "windows"`: This uses Windows authentication to log in.
+
+Permissions
+==============
 Permissions may be given to users to Create, Read, Update or Delete (CRUD) forms.
 Each permission can be granted to zero or more users. By default, anyone can perform any of these actions.
 

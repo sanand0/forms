@@ -145,20 +145,24 @@ _.extend(Application.prototype, {
     console.log(this._name, msg, err, data || '');
   },
 
+  user: function(request) {
+    return (request && request.session && request.session.login && request.session.login[this.login]) || {};
+  },
+
   draw_page: function(options) {
     var file = (this.page && options.name in this.page) ?
                   path.join(this._name, this.page[options.name].file) :
                   path.join(App['default']._name, App['default'].page[options.name].file || App['default'].page['404'].file);
-    return _.template(utils.readFile(file), _({app:this, _:_}).extend(options));
+    return _.template(utils.readFile(file), _({app:this, _:_, user:this.user(options.request)}).extend(options));
   },
 
   draw_form: function(options) {
-    return _.template(utils.readFile('default/form.html'), _({app:this, _:_, errors:{}, doc:options.query, form:this.form[options.name]}).extend(options));
+    return _.template(utils.readFile('default/form.html'), _({app:this, _:_, user:this.user(options.request), errors:{}, doc:options.query, form:this.form[options.name]}).extend(options));
   },
 
   draw_view: function(options) {
     var ext = options.view.template ? path.extname(options.view.template) : '.html';
-    return _.template(utils.readFile('default/view' + ext), _({app:this, _:_}).extend(options));
+    return _.template(utils.readFile('default/view' + ext), _({app:this, _:_, user:this.user(options.request)}).extend(options));
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
@@ -252,7 +256,7 @@ function main_handler(router) {
       // Log out if requested
       if (query.logout && request.session.login && request.session.login[app.login]) { delete request.session.login[app.login]; }
       // If already logged in, redirect to next
-      if (request.session.login && request.session.login[app.login] && request.session.login[app.login].username) {
+      if (request.session && request.session.login && request.session.login[app.login]) {
         response.writeHead(302, { 'Location': query.next || '/' + app._name });
         return response.end();
       }
@@ -382,9 +386,7 @@ function main_handler(router) {
         if (_(changes).keys().length === 0) { return redirectOnSuccess(); }
 
         data[':form'] = request.params.cls;
-        if (request.session && request.session.login && request.session.login[app.login]) {
-          data[':user'] = request.session.login[app.login].username || '';
-        }
+        data[':user'] = app.user(request).username || '';
         data[':updated'] = new Date();
         data[':history'] = original[':history'] || [];
         data[':history'].unshift({
@@ -432,7 +434,7 @@ function main_handler(router) {
 var server = connect(
   connect.bodyParser(),
   connect.cookieParser(),
-  connect.session({ secret: config.secret }),
+  connect.session({ secret: config.secret || ''+Math.random() }),
   connect.router(main_handler)
 ).listen(config.port);
 

@@ -1,5 +1,5 @@
 <%
-var context = {app:app, view:view, docs:docs};
+var context = {app:app, view:view, docs:docs, request:request, user:user};
 var candelete = app.can("delete", app.form[view.form], request.session);
 
 %><div class="nav">

@@ -1,5 +1,5 @@
 <%
-var context = {app:app, form:form, doc:doc};
+var context = {app:app, form:form, doc:doc, request:request, user:user};
 var canchange = (doc && doc._id) ? app.can("update", form, request.session, doc) : app.can("create", form, request.session);
 
 %><div class="nav">
@@ -21,7 +21,7 @@ if (form.description) { %><p><%= form.description %></p><% }
 
   <% if (field.label) {
       var error = errors[field.name];
-      var val = field.formula ? _.safetemplate(field.formula, doc) : (doc[field.name] || field.default || '');
+      var val = field.formula ? _.safetemplate(field.formula, _.extend({_context:context}, doc)) : (doc[field.name] || field.default || '');
       if (field.values && field.values.form && field.values.field) {
         var values = app._lookup(field.values.form, field.values.field);
         if (!_(field.validations).contains(true)) { values.unshift("");  }
@@ -43,7 +43,7 @@ if (form.description) { %><p><%= form.description %></p><% }
    <% } else if (field.type === "select") { %>
     <select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select>
    <% } else if (field.type === "computed") { %>
-    <input name="<%= field.name %>" type="<%= field.type || "text" %>" value="<%= val %>"/>
+    <input name="<%= field.name %>" type="<%= field.type || "text" %>" readonly value="<%= val %>"/>
    <% } else { %>
     <input name="<%= field.name %>" type="<%= field.type || "text" %>" value="<%= val %>"/>
    <% } %>
