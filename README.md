@@ -274,7 +274,6 @@ TODO
 - Search
 - Add types for numbers and dates. Store numbers as numbers, dates as getTime(), etc
 - View count
-- Access control
 - Email integration & workflow
 - External integration (e.g. JIRA)
 - Multiedit

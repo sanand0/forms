@@ -33,20 +33,18 @@ if (form.description) { %><p><%= form.description %></p><% }
     <label for="<%= field.name %>"><%= field.label %></label>
     <% if (field.description) { %><p><%= field.description %></p><% } %>
    </dt>
-   <dd>
-   <% if (field.type === "radio") { %>
-    <% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.name, "\' value=\'", values[i], "\'", values[i] === val ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %>
-   <% } else if (field.type === "checkbox") { %>
-    <% for (var i=0,l=values.length; i<l; i++) { print("<label><input type=\'", field.type, "\' name=\'", field.name, "\' value=\'", values[i], "\'", val.indexOf(values[i]) >= 0 ? " checked=\'checked\'" : "", " />", values[i], "</label>"); } %>
-   <% } else if (field.type === "textarea") { %>
-    <textarea name="<%= field.name %>" id="<%= field.name %>" type="<%= field.type || "text" %>"><%= val %></textarea>
-   <% } else if (field.type === "select") { %>
-    <select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select>
-   <% } else if (field.type === "computed") { %>
-    <input name="<%= field.name %>" type="<%= field.type || "text" %>" readonly value="<%= val %>"/>
-   <% } else { %>
-    <input name="<%= field.name %>" class="<%= field.type || "" %>" type="<%= field.type || "text" %>" value="<%= val %>"/>
-   <% } %>
+   <dd><%
+    if (field.type === "radio" || field.type === "checkbox") {
+      for (var i=0,l=values.length; i<l; i++) { %><label><input type="<%= field.type %>" name="<%= field.name %>" value="<%= values[i] %>" <%= val.indexOf(values[i]) >= 0 ? " checked" : "" %>> <%= values[i] %></label> <% }
+    } else if (field.type === "textarea") {
+      %><textarea name="<%= field.name %>" id="<%= field.name %>" type="<%= field.type || "text" %>"><%= val %></textarea><%
+    } else if (field.type === "select") {
+      %><select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select><%
+    } else if (field.type === "computed") {
+      %><input name="<%= field.name %>" type="<%= field.type || "text" %>" readonly value="<%= val %>"/><%
+    } else {
+      %><input name="<%= field.name %>" class="<%= field.type || "" %>" type="<%= field.type || "text" %>" value="<%= val %>"/><%
+    } %>
    </dd>
 
    <% if (error) { %>

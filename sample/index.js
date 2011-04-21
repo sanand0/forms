@@ -37,7 +37,8 @@
           "description": "This lets you type in a paragraph of text",
           "type": "textarea",
           "validations": [
-              [true, "Paragraph text cannot be blank"]
+            [true, "Paragraph text cannot be blank"],
+            ["/^[0-9]+(\\.)?[0-9]{1,2}$/", "Must be a number"]
           ]
         },
         {
@@ -54,6 +55,22 @@
               [true, "Selection cannot be blank"],
               [["1","2","3"], "Value must be 1, 2 or 3"]
           ]
+        },
+        {
+          "name": "checkbox",
+          "label": "Checkbox",
+          "description": "Choose one or more",
+          "type": "checkbox",
+          "default": "Yes",
+          "values": ["Yes", "No", "Maybe"]
+        },
+        {
+          "name": "radio",
+          "label": "Radio",
+          "description": "Choose one",
+          "type": "radio",
+          "default": "Yes",
+          "values": ["Yes", "No", "Maybe"]
         },
         {
           "name": "file",
