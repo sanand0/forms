@@ -1,3 +1,4 @@
+<% var domain = config && config.login && config.login.windows && config.login.windows.domain; %>
 <div class="nav">
  <a class="breadcrumb" href="/<%= app._name %>">Home</a>
  <a class="breadcrumb" href="/<%= app._name %>/login">Login</a>
@@ -9,7 +10,7 @@
  <fieldset><dl>
   <dt><label for="username">User name</label></dt><dd><input name="username" type="text"></dd>
   <dt><label for="password">Password</label></dt><dd><input name="password" type="password"></dd>
-  <dt><label for="domain">Domain</label></dt><dd><input name="domain" type="text"></dd>
+  <dt><label for="domain">Domain</label></dt><dd><input name="domain" type="text" <% if (domain) { %>readonly value="<%= domain %>"<% } %>></dd>
  </dl></fieldset></div>
  <input type="hidden" name="next" value="<%= query.next %>">
  <button type="submit">Log in</button>

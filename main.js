@@ -260,7 +260,7 @@ function main_handler(router) {
         response.writeHead(302, { 'Location': query.next || '/' + app._name });
         return response.end();
       }
-      app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), { app:app, request:request, query:query, error:0 }));
+      app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), { app:app, config:config, request:request, query:query, error:0 }));
     }
 
     // Display form
@@ -410,17 +410,22 @@ function main_handler(router) {
       if (typeof data['delete'] == 'undefined') {
         return response.end('TODO: What do I do with: ' + JSON.stringify(data));
       }
+      var errors = 0, done = 0, todo = 0, lasterr;
       _(data).each(function(val, key) {
         var parts = key.split(':');
         if (parts[0] == 'doc') {
-          app.db.remove(parts[1], parts[2], function(err, data) {
-            if (!err) {
-              var url = (view.actions && view.actions.onDelete) ? '/' + app._name + view.actions.onDelete : request.url;
-              response.writeHead(302, { 'Location': url });
-              return response.end();
-            } else {
-              app.error('Error saving multiview:', err, data);
-              return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
+          todo++;
+          app.db.remove(parts[1], parts[2], function(err, result) {
+            done++;
+            if (err) { errors++; lasterr = err; }
+            if (todo == done) {
+              if (!err) {
+                response.writeHead(302, {'Location': (view.actions && view.actions.onDelete) ? '/' + app._name + view.actions.onDelete : request.url });
+                return response.end();
+              } else {
+                app.error('Error saving ' + errors + ' documents:', lasterr, result);
+                return app.render(response, 404, '<pre>' + JSON.stringify(lasterr) + '</pre>');
+              }
             }
           });
         }
