@@ -276,7 +276,7 @@ throw new SyntaxError('parseJSON');}};}();}
 // Custom code
 $(function() {
   // Date picker
-  $("input[type=date]").datepicker({dateFormat: 'yy-mm-dd'});
+  $("input.date").datepicker({dateFormat: 'yy-mm-dd'});
 
   // Toggle headings
   $('.toggle').live('click', function() { $(this).next().slideToggle(200); });
