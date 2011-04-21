@@ -66,8 +66,6 @@
       "key": [],
 
       "permissions": {
-        "read"  : ["all"],
-        "create": ["all"],
         "update": ["author","admin"]
       },
 
@@ -153,6 +151,7 @@
         { "name": "date",     "label": "Date"     },
         { "name": "text",     "label": "Text"     },
         { "name": "textarea", "label": "Para"     },
+        { "name": "textarea", "label": "Para", "formula": "<a href=\"/sample/sample?text=<%= encodeURIComponent(text) %>\">Create new <%= text %></a>"     },
         { "name": "select",   "label": "Number"   }
       ]
     }

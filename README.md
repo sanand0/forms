@@ -150,6 +150,8 @@ Each "view" object contains the following fields:
           Each change is an object with `:updated` holding the time of the change,
           and `:fields` holding an object of fields changes.
     - `label`: required. The display name. Any text is fine.
+    - `formula`: optional. A text with
+      [EJS templates](http://documentcloud.github.com/underscore/#template), e.g. `<%= field1*field2 %>kg`
 - `actions`: optional. A list of actions to display along with the documents. Actions can have:
     - `label`: required. The text to display for the action (templates using the variables `app`, `view` or `docs` allowed)
     - `url`: The link to visit when the action is clicked (templates using the variables `app`, `view` or `docs` allowed)
@@ -283,4 +285,3 @@ TODO
 * Test scripts
 
 Custom views: Frequency, statistics, trends
-

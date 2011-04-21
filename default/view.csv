@@ -1,5 +1,11 @@
 <%= _(view.fields).pluck('label').map(function(label) { return '"' + label + '"' } ).join(',') %>
 <% var fields = _(view.fields).pluck('name');
    for (var i=0, doc; doc=docs[i]; i++) {
-%><%=     _(fields).map(function(field) { return '"' + (doc[field]||'').replace('"', '""') + '"';  }).join(',') %>
+     var row = [];
+     for (var j=0, field; field=view.fields[j]; j++) {
+       var v = field.formula ? _.safetemplate(field.formula, _.extend({_user:user}, doc)) : doc[field.name];
+       if (typeof(v) == "undefined") { v == ''; }
+       if (v.match('"')) { v = '"' + v.replace('"', '""') + '"'; }
+       row.push(v);
+     }%><%= row.join(',') %>
 <% } %>

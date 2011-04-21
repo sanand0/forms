@@ -19,7 +19,11 @@ if (view.description) { %><p><%= view.description %></p><% }
     for (var i=0, doc; doc=docs[i]; i++) {
       %><tr><td><input name="doc:<%= doc._id %>:<%= doc._rev %>" type="checkbox"></td><%
         for (var j=0, field; field=view.fields[j]; j++) {
-          %><td><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.name] %></a></td><%
+          %><td><% if (field.formula) {
+            %><%= _.safetemplate(field.formula, _.extend({_user:user}, doc)) %><%
+            } else {
+            %><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.name] %></a></td><%
+          }
         }
       %></tr><%
     }
