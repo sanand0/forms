@@ -9,14 +9,14 @@ var canchange = (doc && doc._id) ? app.can("update", form, request.session, doc)
 </div><%
 
 if (form.label) { %><h2><%= form.label %></h2><% }
-if (form.description) { %><p><%= form.description %></p><% }
+if (form.description) { %><p><%= _.safetemplate(form.description, context) %></p><% }
  %><form method="post" class="form"><%
  if (doc && doc._id) { %><input type="hidden" name="_id" value="<%= doc._id %>"/><input type="hidden" name="_rev" value="<%= doc._rev %>"/><% }
   for (var index=0, field; field=form.fields[index]; index++) { %>
 
   <% if (field.section || !index) { %>
    <% if (index > 0) { %></dl></fieldset></div><% } %>
-   <div class="section" id="<%= field.name %>"><% if (field.section) { %><h2><%= field.section %></h2><p><%= field.description %></p><% } %><fieldset><dl>
+   <div class="section" id="<%= field.name %>"><% if (field.section) { %><h2><%= field.section %></h2><p><%= _.safetemplate(field.description, context) %></p><% } %><fieldset><dl>
   <% } %>
 
   <% if (field.label) {
@@ -31,7 +31,7 @@ if (form.description) { %><p><%= form.description %></p><% }
   %>
    <dt class="<%= error ? "error" : "" %>">
     <label for="<%= field.name %>"><%= field.label %></label>
-    <% if (field.description) { %><p><%= field.description %></p><% } %>
+    <% if (field.description) { %><p><%= _.safetemplate(field.description, context) %></p><% } %>
    </dt>
    <dd><%
     if (field.type === "radio" || field.type === "checkbox") {
@@ -63,7 +63,7 @@ if (form.description) { %><p><%= form.description %></p><% }
 <% if (form.actions) { %>
  <ul class="actions">
   <% for (var i=0, action; action=form.actions[i]; i++) { %>
-   <li><a href="/<%= app._name %><%= _.template(action.url, context) %>"><%= _.template(action.label, context) %></a></li>
+   <li><a href="/<%= app._name %><%= _.safetemplate(action.url, context) %>"><%= _.safetemplate(action.label, context) %></a></li>
   <% } %>
  </ul>
 <% } %>

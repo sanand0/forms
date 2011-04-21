@@ -1,5 +1,8 @@
 {
   "database": "sample",
+  "label": "Sample",
+  "login": "default",
+  "description": "A sample application that tests all features of Forms",
   "template": "index.html",
 
   "form": {
@@ -86,9 +89,7 @@
         "update": ["author","admin"]
       },
 
-      "actions": {
-        "onSubmit": "/samples"
-      }
+      "onsubmit": "/samples"
     },
 
     "another": {
@@ -154,9 +155,7 @@
         "update": ["author","admin"]
       },
 
-      "actions": {
-        "onSubmit": "/samples"
-      }
+      "onsubmit": "/samples"
     }
 
   },

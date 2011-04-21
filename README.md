@@ -95,7 +95,7 @@ Form objects
 Each "form" object contains the following fields:
 
 - `label`: optional. A display name for the form
-- `description`: optional. A summary of the form
+- `description`: optional. A summary of the form. [EJS templates](http://documentcloud.github.com/underscore/#template) allowed.
 - `fields`: required. A list of fields. Fields can have:
 
     - `name`: required. The field name. Just stick to letters (preferably lowercase), numbers and underscore. No spaces.
@@ -135,7 +135,7 @@ View objects
 Each "view" object contains the following fields:
 
 - `label`: optional. A display name for the view
-- `description`: optional. A summary of the view
+- `description`: optional. A summary of the view. [EJS templates](http://documentcloud.github.com/underscore/#template) allowed.
 - `template`: optional. A template file to use from the application's template list.
    Use a .html file to create a HTML view, and .csv file to create a .csv view.
    These are the only two types currently supported.

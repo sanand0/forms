@@ -8,7 +8,7 @@ var candelete = app.can("delete", app.form[view.form], request.session);
 </div><%
 
 if (view.label) { %><h2><%= view.label %></h2><% }
-if (view.description) { %><p><%= view.description %></p><% }
+if (view.description) { %><p><%= _.safetemplate(view.description, context) %></p><% }
 %><form method="post" class="view">
  <table>
   <thead><tr><th></th><%
