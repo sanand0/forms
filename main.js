@@ -294,6 +294,8 @@ function main_handler(router) {
         query.limit = query.limit || view.limit || 200;
         app.db.view(viewname + ':' + index + '/' + sortby, query, function(err, viewdata) {
           app.db.get(_.pluck(viewdata, 'value'), function(err, docs) {
+            if (err) { return app.error('Error loading view:', err, docs); }
+            if (typeof(viewdata) == 'undefined') { viewdata = []; }
             responses[index] = app.draw_view({request:request, query:query, name:request.params.cls, view:view, docs:_.pluck(docs, 'doc'), viewdata:viewdata, sortby:sortby});
             if (++count < viewlist.length) { return; }
             app.render(response, 200, responses, view);
