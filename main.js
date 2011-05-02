@@ -345,7 +345,7 @@ function main_handler(router) {
       };
       var failure = function() {
         app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), {
-          app:app, request:request, query:data, error:'Login failed'
+          app:app, request:request, query:data, config:config, error:'Login failed'
         }));
       };
       if (app.login == 'default') {
@@ -358,8 +358,8 @@ function main_handler(router) {
       } else if (app.login == 'windows') {
         var params = (config.login && config.login['windows']) || {};
         // auth via http://www.joeware.net/freetools/tools/auth/index.htm
-        var cmd = spawn('auth.exe', ['/d:' + request.body.domain || params.domain, '/u:' + request.body.username, '/p:' + request.body.password]).on('exit', function(code) {
-          if (code) { success({ username: request.body.username.toLowerCase() }); }
+        var cmd = spawn(path.join(__dirname, 'auth.exe'), ['/d:' + request.body.domain || params.domain, '/u:' + request.body.username, '/p:' + request.body.password]).on('exit', function(code) {
+          if (code == 1) { success({ username: request.body.username.toLowerCase() }); }
           else { failure(); }
         });
         cmd.stdin.end();
