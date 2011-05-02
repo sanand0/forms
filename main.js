@@ -292,14 +292,13 @@ function main_handler(router) {
         var sortby = request.params.id || view.fields[0].name;
         if (sortby[0] == '-') { sortby = sortby.substr(1); query.descending = true; }
         query.limit = query.limit || view.limit || 200;
+        query.include_docs = true;
         app.db.view(viewname + ':' + index + '/' + sortby, query, function(err, viewdata) {
-          app.db.get(_.pluck(viewdata, 'value'), function(err, docs) {
-            if (err) { return app.error('Error loading view:', err, docs); }
-            if (typeof(viewdata) == 'undefined') { viewdata = []; }
-            responses[index] = app.draw_view({request:request, query:query, name:request.params.cls, view:view, docs:_.pluck(docs, 'doc'), viewdata:viewdata, sortby:sortby});
-            if (++count < viewlist.length) { return; }
-            app.render(response, 200, responses, view);
-          });
+          if (err) { return app.error('Error loading view:', err, viewdata); }
+          if (typeof(viewdata) == 'undefined') { viewdata = []; }
+          responses[index] = app.draw_view({request:request, query:query, name:request.params.cls, view:view, docs:_.pluck(viewdata, 'doc'), viewdata:viewdata, sortby:sortby});
+          if (++count < viewlist.length) { return; }
+          app.render(response, 200, responses, view);
         });
       });
     }
