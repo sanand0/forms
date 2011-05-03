@@ -158,8 +158,7 @@ Each "view" object contains the following fields:
 
 Pages
 =====
-A page is a HTML file (or any file, for that matter) that is rendered at a particular URL.
-For example,
+A page is either a link or a file to be renderered. For example,
 
     "page": {
       "help": {
@@ -169,11 +168,22 @@ For example,
       }
     }
 
-... lets you create a files in the application folder called `help.html`.
+... will display the contents of `help.html` at `/help`.
+
+    "page": {
+      "logout": {
+        "url": "/login?logout=1"
+        "label": "Logout",
+        "description": "Logs the current user out",
+      }
+    }
+
+... will redirect the user to the logout URL `/login?logout=1`.
 
 Each page object can contain the following fields:
 
-- `file`: required. The name of the file to display. The file location is relative to the application folder
+- `file`: optional. The name of the file to display. The file location is relative to the application folder
+- `url`: optional. The URL to redirect to. Either `file` or `url` MUST be specified.
 - `label`: optional. A display name for the page
 - `description`: optional. A summary of the page
 
@@ -267,6 +277,7 @@ Administration
 
 TODO
 ====
+- Github the app code
 - Authentication: LDAP, OAuth2
 - Hierarchical categories
 - Filterable reports with date ranges
@@ -278,6 +289,7 @@ TODO
 - External integration (e.g. JIRA)
 - Multiedit
 - Bulk exports and import
+- Lookups (for read-only fields, etc.)
 * App builder. Pure Javascript. Just use a JSON editor.
 * Computed fields in views (e.g. totals)
 * RSS feeds

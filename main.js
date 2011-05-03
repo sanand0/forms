@@ -19,6 +19,7 @@ var utils = require('./utils');
 // The only change is that we've added some try-catch blocks.
 _.safetemplate = function(str, data) {
   var c  = _.templateSettings;
+  var str = str || '';
   var tmpl = 'var __p=[],print=function(){__p.push.apply(__p,arguments);};' +
     'with(obj||{}){__p.push(\'' +
     str.replace(/\\/g, '\\\\')
@@ -293,19 +294,31 @@ function main_handler(router) {
         if (sortby[0] == '-') { sortby = sortby.substr(1); query.descending = true; }
         query.limit = query.limit || view.limit || 200;
         query.include_docs = true;
+        query.reduce = false;
         app.db.view(viewname + ':' + index + '/' + sortby, query, function(err, viewdata) {
+          count++;
           if (err) { return app.error('Error loading view:', err, viewdata); }
           if (typeof(viewdata) == 'undefined') { viewdata = []; }
           responses[index] = app.draw_view({request:request, query:query, name:request.params.cls, view:view, docs:_.pluck(viewdata, 'doc'), viewdata:viewdata, sortby:sortby});
-          if (++count < viewlist.length) { return; }
-          app.render(response, 200, responses, view);
+          if (count >= viewlist.length) { app.render(response, 200, responses, view); }
         });
       });
     }
 
-    // Display page (or if none is specified, then draw the home page)
-    else if (!request.params.cls || (app.page && app.page[request.params.cls])) {
-      app.render(response, 200, app.draw_page({request:request, query:query, name:request.params.cls || ''}));
+    // Display page
+    else if (app.page && app.page[request.params.cls]) {
+      var page = app.page[request.params.cls];
+      if (page.url) {
+        response.writeHead(302, { 'Location': page.url });
+        return response.end();
+      } else if (page.file) {
+        app.render(response, 200, app.draw_page({request:request, query:query, name:request.params.cls}));
+      }
+    }
+
+    // Display home page
+    else if (!request.params.cls) {
+      app.render(response, 200, app.draw_page({request:request, query:query, name:''}));
     }
 
     // Handle administration functions under /:app/_admin
