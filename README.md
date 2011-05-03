@@ -277,6 +277,8 @@ Administration
 
 TODO
 ====
+- Computed fields in views (e.g. totals)
+- Lookups (for read-only fields, etc.)
 - Github the app code
 - Authentication: LDAP, OAuth2
 - Hierarchical categories
@@ -289,9 +291,7 @@ TODO
 - External integration (e.g. JIRA)
 - Multiedit
 - Bulk exports and import
-- Lookups (for read-only fields, etc.)
 * App builder. Pure Javascript. Just use a JSON editor.
-* Computed fields in views (e.g. totals)
 * RSS feeds
 * Test scripts
 

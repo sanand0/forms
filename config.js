@@ -26,7 +26,7 @@ module.exports = {
     },
 
     "windows": {
-      "domain": "itlinfosys.com"
+      "domain": "itlinfosys"
     }
   }
 
