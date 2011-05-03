@@ -85,13 +85,41 @@ function design_app(app) {
     });
   });
 
-  // Create the design documents for the views
-  var map_field = 'function(doc) { if (doc[":form"] == "<%= form %>") { <% if (filter) { %>with(doc) { if (!(<%= filter %>)) return; }<% } %> emit(doc["<%= fieldname %>"], doc._id); } }';
+  // View design documents _design/[viewname:index]/[fieldname]
+  var map_field   = 'function(doc) { if (doc[":form"] == "<%= form %>") { <% if (filter) { %>with(doc) { if (!(<%= filter %>)) return; }<% } %> emit(doc["<%= fieldname %>"], doc["<%= fieldname %>"]); } }';
+  var summary_map = 'function(doc) { if (doc[":form"] == "<%= form %>") { <% if (filter) { %>with(doc) { if (!(<%= filter %>)) return; }<% } %> emit(doc._id, { <%= fieldobj %> }); } }';
+  var summary_reduce = 'function(keys, values, rereduce) { var o = {}; for (var i=0, v; v=values[i]; i++) { if (rereduce) { <%= rereduce %> } else { <%= reduce %> } }; return o}';
+  var summary = {
+    '': {
+      'reduce': '',
+      'rereduce': ''
+    },
+    'count': {
+      'reduce':     'o["<%= name %>"] = 1 + (o["<%= name %>"]||0);',
+      'rereduce':   'o["<%= name %>"] = +(v["<%= name %>"]||0) + (o["<%= name %>"]||0);'
+    },
+    'sum': {
+      'reduce':     'o["<%= name %>"] = +(v["<%= name %>"]||0) + (o["<%= name %>"]||0);',
+      'rereduce':   'o["<%= name %>"] = +(v["<%= name %>"]||0) + (o["<%= name %>"]||0);'
+    }
+  };
   _.each(app.view, function(views, name) {
     _.each(_.isArray(views) ? views : [views], function(view, index) {
+      // Create the map views for sorting by each field
       for (var design={views:{}}, i=0, field; field=view.fields[i]; i++) {
         design.views[field.name] = { "map": _.template(map_field, { form: view.form, fieldname: field.name, filter:view.filter }) };
       }
+      // Create the reduce views for the summary
+      var fields   = _(view.fields).map(function(field) { return field.summary ? _.template('"<%= name %>": doc["<%= name %>"]', field) : ''; });
+      var reduce   = _(view.fields).map(function(field) { return _.template(summary[field.summary ? field.summary.formula : ''].reduce  , field); }).join('');
+      var rereduce = _(view.fields).map(function(field) { return _.template(summary[field.summary ? field.summary.formula : ''].rereduce, field); }).join('');
+      if (reduce || rereduce) {
+        design.views[':summary'] = {
+          "map": _.template(summary_map, { form: view.form, filter:view.filter, fieldobj: _(fields).select(_.identity).join(',') }),
+          "reduce": _.template(summary_reduce, { reduce: reduce, rereduce: rereduce })
+        };
+      }
+      // Save the design if different
       var key = '_design/' + name + ':' + index;
       app.db.get(key, function(err, doc) {
         if (!err && _.isEqual(doc.views, design.views)) { return; }
