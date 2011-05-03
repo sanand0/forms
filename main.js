@@ -154,23 +154,23 @@ _.extend(Application.prototype, {
     var file = (this.page && options.name in this.page) ?
                   path.join(this._name, this.page[options.name].file) :
                   path.join(App['default']._name, App['default'].page[options.name].file || App['default'].page['404'].file);
-    return _.template(utils.readFile(file), _({app:this, _:_, user:this.user(options.request)}).extend(options));
+    return _.template(utils.readFile(file), this.context(options));
   },
 
   draw_form: function(options) {
-    return _.template(utils.readFile('default/form.html'), _({app:this, _:_, user:this.user(options.request), errors:{}, doc:options.query, form:this.form[options.name]}).extend(options));
+    return _.template(utils.readFile('default/form.html'), this.context({errors: {}, doc:this._context.query, form:this.form[options.name]}, options));
   },
 
   draw_view: function(options) {
     var ext = options.view.template ? path.extname(options.view.template) : '.html';
-    return _.template(utils.readFile('default/view' + ext), _({app:this, _:_, user:this.user(options.request)}).extend(options));
+    return _.template(utils.readFile('default/view' + ext), this.context(options));
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
   //    app.render(response, 200, 'abc', form_or_view_or_page)
   //    app.render(response, 200, ['abc', 'def'], form_or_view_or_page)
-  render: function(response, code, params, object) {
-    var app = this;
+  render: function(code, body, object) {
+    var app = this, response = app._context.response;
     templatename = (object && object.template) ? object.template : (app.template || '../default/index.html');
     template = utils.readFile(path.join(app._name, templatename));
     mimetype = mime.lookup(templatename, 'text/html')
@@ -180,9 +180,9 @@ _.extend(Application.prototype, {
       var filename = (object.label ? object.label.replace(/[^A-Za-z0-9_\-]+/, '-') : templatename) + path.extname(templatename);
       response.setHeader('Content-Disposition', 'attachment; filename=' + filename);
     }
-    response.end(_.template(template, _.extend({}, {
+    response.end(_.template(template, app.context({
       static_url: function(path) { return '/' + app._name + '/static/' + path; },
-      body: _.isArray(params) ? params.join('') : params
+      body: _.isArray(body) ? body.join('') : body
     })));
   },
 
@@ -198,6 +198,26 @@ _.extend(Application.prototype, {
     if (_.contains(perms, user.username)) { return true; }
     if (_.intersect(user.role, perms).length > 0) { return true; }
     return false;
+  },
+
+  // Sets the context object for templates
+  set_context: function(request, response) {
+    this._context = {
+      _:_,
+      app: this,
+      request: request,
+      response: response,
+      user: this.user(request),
+      config: config,
+      query: url.parse(request.url, true).query
+    };
+  },
+
+  // Gets the context object
+  context: function() {
+    var ctx = _.extend({}, this._context);
+    for (var i=0, l=arguments.length; i<l; i++) { _.extend(ctx, arguments[i]); }
+    return ctx;
   },
 
   validate: function(formname, data) {
@@ -236,7 +256,8 @@ fs.readdir(config.apps_folder || '.', function(err, folders) {
 // ----------------
 function main_handler(router) {
   router.get('/', function(request, response, next) {
-    App['default'].render(response, 200, _.template(utils.readFile('default/applist.html'), { App: App }));
+    App['default'].set_context(request, response);
+    App['default'].render(200, _.template(utils.readFile('default/applist.html'), { App: App }));
   });
 
   router.get('/:filename', function(request, response, next) {
@@ -249,8 +270,13 @@ function main_handler(router) {
 
   router.get('/:app/:cls?/:id?', function(request, response, next) {
     var query = url.parse(request.url, true).query;
-    var app = App[request.params.app];
-    if (!app) { return App['default'].render(response, 200, App['default'].draw_page({request:request, query:query, name:'404'})); }
+    var app = App[request.params.app] || App['default'];
+    app.set_context(request, response);
+
+    // Ignore non-existent applications
+    if (!App[request.params.app]) {
+      return app.render(404, app.draw_page({name:'404'}));
+    }
 
     // Display login
     if (request.params.cls == 'login') {
@@ -261,7 +287,7 @@ function main_handler(router) {
         response.writeHead(302, { 'Location': query.next || '/' + app._name });
         return response.end();
       }
-      app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), { app:app, config:config, request:request, query:query, error:0 }));
+      app.render(200, _.template(utils.readFile('default/login-' + app.login + '.html'), app.context({ error:'' })));
     }
 
     // Display form
@@ -271,14 +297,14 @@ function main_handler(router) {
         app.db.get(request.params.id, function(err, doc) {
           if (err) {
             app.error('Error loading doc:', err, doc);
-            return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
+            return app.render(404, '<pre>' + JSON.stringify(err) + '</pre>');
           }
-          if (!app.can('read', form, request.session, doc)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'read' }})); }
-          app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls, doc:doc}), form);
+          if (!app.can('read', form, request.session, doc)) { return app.render(403, app.draw_page({name:'403', operation: 'read' })); }
+          app.render(200, app.draw_form({name:request.params.cls, doc:doc}), form);
         });
       } else {
-        if (!app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'create' }})); }
-        app.render(response, 200, app.draw_form({request:request, query:query, name:request.params.cls}), form);
+        if (!app.can('create', form, request.session)) { return app.render(403, app.draw_page({name:'403', operation: 'create' })); }
+        app.render(200, app.draw_form({name:request.params.cls}), form);
       }
     }
 
@@ -294,13 +320,12 @@ function main_handler(router) {
         if (sortby[0] == '-') { sortby = sortby.substr(1); query.descending = true; }
         query.limit = query.limit || view.limit || 200;
         query.include_docs = true;
-        query.reduce = false;
         app.db.view(viewname + ':' + index + '/' + sortby, query, function(err, viewdata) {
           count++;
           if (err) { return app.error('Error loading view:', err, viewdata); }
           if (typeof(viewdata) == 'undefined') { viewdata = []; }
-          responses[index] = app.draw_view({request:request, query:query, name:request.params.cls, view:view, docs:_.pluck(viewdata, 'doc'), viewdata:viewdata, sortby:sortby});
-          if (count >= viewlist.length) { app.render(response, 200, responses, view); }
+          responses[index] = app.draw_view({name:request.params.cls, view:view, docs:_.pluck(viewdata, 'doc'), viewdata:viewdata, sortby:sortby});
+          if (count >= viewlist.length) { app.render(200, responses, view); }
         });
       });
     }
@@ -312,29 +337,29 @@ function main_handler(router) {
         response.writeHead(302, { 'Location': page.url });
         return response.end();
       } else if (page.file) {
-        app.render(response, 200, app.draw_page({request:request, query:query, name:request.params.cls}));
+        app.render(200, app.draw_page({name:request.params.cls}));
       }
     }
 
     // Display home page
     else if (!request.params.cls) {
-      app.render(response, 200, app.draw_page({request:request, query:query, name:''}));
+      app.render(200, app.draw_page({name:''}));
     }
 
     // Handle administration functions under /:app/_admin
     else if (request.params.cls == '_admin') {
       if (request.params.id == 'reload') {
         App[request.params.app] = new Application(request.params.app);
-        app.render(response, 200, _.template('Reloaded. <a href="/<%= app._name %>">Back</a>', { app:app }));
+        app.render(200, _.template('Reloaded. <a href="/<%= app._name %>">Back</a>', app.context()));
       }
 
       else {
-        app.render(response, 404, 'No such admin command');
+        app.render(404, 'No such admin command');
       }
     }
 
     else {
-      app.render(response, 200, app.draw_page({request:request, name:'404', query:query}));
+      app.render(200, app.draw_page({name:'404'}));
     }
   });
 
@@ -342,10 +367,13 @@ function main_handler(router) {
   // Receive a submitted form
   // -----------------------------------------------------------------
   router.post('/:app/:cls?/:id?', function(request, response, next) {
-    // Ensure that app exists
-    var app = App[request.params.app];
     var data = request.body;
-    if (!app) { return; }
+    // Ensure that app exists
+    var app = App[request.params.app] || App['default'];
+    app.set_context(request, response);
+    if (app === App['default']) {
+      return app.render(404, app.draw_page({name:'404'}));
+    }
 
     // Display login
     if (request.params.cls == 'login') {
@@ -356,9 +384,7 @@ function main_handler(router) {
         return response.end();
       };
       var failure = function() {
-        app.render(response, 200, _.template(utils.readFile('default/login-' + app.login + '.html'), {
-          app:app, request:request, query:data, config:config, error:'Login failed'
-        }));
+        app.render(200, _.template(utils.readFile('default/login-' + app.login + '.html'), app.context({ query:data, error:'Login failed' })));
       };
       if (app.login == 'default') {
         var userlist = (config.login && config.login['default']) || {};
@@ -380,7 +406,7 @@ function main_handler(router) {
 
     else if (app.form && app.form[request.params.cls]) {
       var form = app.form[request.params.cls];
-      if (!data._id && !app.can('create', form, request.session)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'create' }})); }
+      if (!data._id && !app.can('create', form, request.session)) { return app.render(403, app.draw_page({name:'403', operation: 'create' })); }
       var redirectOnSuccess = function() {
         var url = form.onsubmit ? '/' + app._name + form.onsubmit : request.url;
         response.writeHead(302, { 'Location': url });
@@ -388,10 +414,10 @@ function main_handler(router) {
       };
       var errors = app.validate(request.params.cls, data);
       if (errors) {
-        return app.render(response, 200, app.draw_form({request:request, query:data, name:request.params.cls, doc:data, errors:errors}));
+        return app.render(200, app.draw_form({name:request.params.cls, doc:data, errors:errors}));
       }
       app.db.get(data._id, function(err, original) {
-        if (data._id && !app.can('update', form, request.session, original)) { return app.render(response, 403, app.draw_page({request:request, name:'403', query:{ 'operation': 'update' }})); }
+        if (data._id && !app.can('update', form, request.session, original)) { return app.render(403, app.draw_page({name:'403', operation: 'update' })); }
         var changes = _.reduce(data, function(memo, val, key) {
           if (key[0] !== '_' && key[0] !== ':' && original[key] !== val) { memo.push([key, original[key], val]); }
           return memo;
@@ -412,7 +438,7 @@ function main_handler(router) {
         app.db.save(data, function(err, res) {
           if (err) {
             app.error('Error saving doc:', err, data);
-            return app.render(response, 404, '<pre>' + JSON.stringify(err) + '</pre>');
+            return app.render(404, '<pre>' + JSON.stringify(err) + '</pre>');
           }
           return redirectOnSuccess();
         });
@@ -438,7 +464,7 @@ function main_handler(router) {
                 return response.end();
               } else {
                 app.error('Error saving ' + errors + ' documents:', lasterr, result);
-                return app.render(response, 404, '<pre>' + JSON.stringify(lasterr) + '</pre>');
+                return app.render(404, '<pre>' + JSON.stringify(lasterr) + '</pre>');
               }
             }
           });
