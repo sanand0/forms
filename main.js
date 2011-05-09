@@ -389,6 +389,14 @@ function main_handler(router) {
       app.render(200, app.draw_page({name:''}));
     }
 
+    // Handle form lookups: /:app/_lookup?form=...&field=...&value=... returns JSON document for form where field = value
+    else if (request.params.cls == '_lookup') {
+      app.db.view('lookup/' + query.form + ':' + query.field, { key: query.value, include_docs: true }, function (err, docs) {
+        response.writeHead(200, { 'Content-type': 'application/json' });
+        response.end(docs && docs[0] && docs[0].doc ? JSON.stringify(docs[0].doc) : '');
+      })
+    }
+
     // Handle administration functions under /:app/_admin
     else if (request.params.cls == '_admin') {
       if (request.params.id == 'reload') {
