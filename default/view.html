@@ -20,7 +20,7 @@ if (view.description) { %><p><%= _.safetemplate(view.description, context) %></p
       %><tr><td><input name="doc:<%= doc._id %>:<%= doc._rev %>" type="checkbox"></td><%
         for (var j=0, field; field=view.fields[j]; j++) {
           %><td><% if (field.formula) {
-            %><%= _.safetemplate(field.formula, _.extend({_user:user}, doc)) %><%
+            %><%= _.safetemplate(field.formula, _.extend({_user:user, _index:i}, doc)) %><%
             } else {
             %><a href="/<%= app._name %>/<%= view.form %>/<%= doc._id %>"><%= doc[field.name] %></a></td><%
           }

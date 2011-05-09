@@ -166,6 +166,7 @@
     "samples": {
       "form": "sample",
       "fields": [
+        { "name": "sno",      "label": "S.No",   "formula": "<%= _index %>" },
         { "name": "date",     "label": "Date",   "summary": { "formula": "count" } },
         { "name": "text",     "label": "Text",   "summary": { "formula": "count" } },
         { "name": "number",   "label": "Number", "summary": { "formula": "sum" } },
@@ -178,11 +179,6 @@
       "label": "Custom view",
       "renderer": "customview.html",
       "fields": [
-        { "name": "date",     "label": "Date",   "summary": { "formula": "count" } },
-        { "name": "text",     "label": "Text",   "summary": { "formula": "count" } },
-        { "name": "number",   "label": "Number", "summary": { "formula": "sum" } },
-        { "name": "textarea", "label": "Para", "formula": "<a href=\"/sample/sample?text=<%= encodeURIComponent(text) %>\">Create new <%= text %></a>"     },
-        { "name": "select",   "label": "Number", "summary": { "formula": "sum" } }
       ]
     }
   }
