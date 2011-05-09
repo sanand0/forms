@@ -109,7 +109,7 @@ function design_app(app) {
       for (var design={views:{}}, i=0, field; field=view.fields[i]; i++) {
         design.views[field.name] = { "map": _.template(map_field, { form: view.form, fieldname: field.name, filter:view.filter }) };
       }
-      // Create the reduce views for the summary
+      // Create the reduce views for the summary: _design/[viewname:index]/:summary
       var fields   = _(view.fields).map(function(field) { return field.summary ? _.template('"<%= name %>": doc["<%= name %>"]', field) : ''; });
       var reduce   = _(view.fields).map(function(field) { return _.template(summary[field.summary ? field.summary.formula : ''].reduce  , field); }).join('');
       var rereduce = _(view.fields).map(function(field) { return _.template(summary[field.summary ? field.summary.formula : ''].rereduce, field); }).join('');
@@ -342,19 +342,31 @@ function main_handler(router) {
       var viewlist = app.view[viewname];
       if (!_.isArray(viewlist)) { viewlist = [viewlist]; }
 
-      var responses = [], count = 0;
+      var responses = [], rows = [], summaries = [], requested_views = 0, received_views = 0;
       _(viewlist).each(function(view, index) {
         var sortby = request.params.id || view.fields[0].name;
+        var has_summary = _(view.fields).chain().pluck('summary').any().value();
         if (sortby[0] == '-') { sortby = sortby.substr(1); query.descending = true; }
-        query.limit = query.limit || view.limit || 200;
-        query.include_docs = true;
-        app.db.view(viewname + ':' + index + '/' + sortby, query, function(err, viewdata) {
-          count++;
-          if (err) { return app.error('Error loading view:', err, viewdata); }
-          if (typeof(viewdata) == 'undefined') { viewdata = []; }
-          responses[index] = app.draw_view({name:request.params.cls, view:view, docs:_.pluck(viewdata, 'doc'), viewdata:viewdata, sortby:sortby});
-          if (count >= viewlist.length) { app.render(200, responses, view); }
-        });
+        var callback = function(err, viewdata, target) {
+          if (err) { return app.error('Error loading view ' + viewname + ':' + index + '/...', err, viewdata); }
+          target[index] = typeof(viewdata) == 'undefined' ? [] : viewdata;
+          if (rows[index] && (!has_summary || summaries[index])) {
+            responses[index] = app.draw_view({name:request.params.cls, view:view, docs:_.pluck(rows[index], 'doc'), viewdata:rows[index], summary: summaries[index], sortby:sortby});
+          }
+          if (++received_views >= requested_views) { app.render(200, responses, view); }
+        };
+        requested_views++;
+        app.db.view(viewname + ':' + index + '/' + sortby,
+          _.extend({limit:view.limit||200}, query, {include_docs: true}),
+          function(err, viewdata) { callback(err, viewdata, rows); }
+        );
+        if (has_summary) {
+          requested_views++;
+          app.db.view(viewname + ':' + index + '/:summary',
+            _.extend({}, query),
+            function(err, viewdata) { callback(err, viewdata[0], summaries); }
+          );
+        }
       });
     }
 

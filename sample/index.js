@@ -35,6 +35,12 @@
           ]
         },
         {
+          "name": "number",
+          "label": "Number field",
+          "description": "This is a simple number field",
+          "type": "number"
+        },
+        {
           "name": "textarea",
           "label": "Paragraph text",
           "description": "This lets you type in a paragraph of text",
@@ -82,8 +88,6 @@
           "type": "file"
         }
       ],
-
-      "key": [],
 
       "permissions": {
         "update": ["author","admin"]
@@ -147,8 +151,6 @@
         }
       ],
 
-      "key": [],
-
       "permissions": {
         "read"  : ["all"],
         "create": ["all"],
@@ -164,11 +166,11 @@
     "samples": {
       "form": "sample",
       "fields": [
-        { "name": "date",     "label": "Date"     },
-        { "name": "text",     "label": "Text"     },
-        { "name": "textarea", "label": "Para"     },
+        { "name": "date",     "label": "Date",   "summary": { "formula": "count" } },
+        { "name": "text",     "label": "Text",   "summary": { "formula": "count" } },
+        { "name": "number",   "label": "Number", "summary": { "formula": "sum" } },
         { "name": "textarea", "label": "Para", "formula": "<a href=\"/sample/sample?text=<%= encodeURIComponent(text) %>\">Create new <%= text %></a>"     },
-        { "name": "select",   "label": "Number"   }
+        { "name": "select",   "label": "Number", "summary": { "formula": "sum" } }
       ]
     }
   }

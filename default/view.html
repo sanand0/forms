@@ -27,14 +27,21 @@ if (view.description) { %><p><%= _.safetemplate(view.description, context) %></p
         }
       %></tr><%
     }
+  %></td></tr></tbody><tfoot><%
+    if (summary && summary.value) {
+      %><tr class="summary"><th></th><%
+        for (var i=0, field; field=view.fields[i]; i++) {
+          %><th><%= typeof summary.value[field.name] !== "undefined" ? summary.value[field.name] : "" %></th><%
+        }
+      %></tr><%
+    }
   %><tr><td class="next" colspan="<%= 1 + view.fields.length %>"> <%
     if (viewdata.length > 0) {
       var first = viewdata[0];
       var last = viewdata[viewdata.length-1];
       %><a href="?startkey=<%= last.key %>&startkey_docid=<%= last.value %>&skip=1">Next</a><%
     }
-  %></td></tr>
-  </tbody>
+  %></tfoot>
  </table>
  <% if (candelete) { %><button name="delete" type="submit">Delete</button><% } %>
 </form>

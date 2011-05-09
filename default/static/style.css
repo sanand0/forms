@@ -22,6 +22,8 @@ body { background-color: #fff; margin: 1em 4em; padding: 1em; border-radius: 1em
 h2 { border-bottom: 1px dotted #4f81bd; color: #4f81bd; }
 input, select, textarea { border: 1px inset #c3c3c3; background-color: #f8f8f8; }
 
+.error { color: red; }
+
 /* Navigation */
 .nav { font-size: 80%; }
 .nav .breadcrumb { display: inline-block; *display:inline; zoom:1; padding: 0 0.3em; border-top: 1px solid #edf2f8; border-bottom: 1px solid #edf2f8; }
@@ -55,3 +57,4 @@ input, select, textarea { border: 1px inset #c3c3c3; background-color: #f8f8f8; 
 .view .next { text-align: right; }
 .view thead { line-height: 1.5; }
 .view thead input { width: 1em; }
+.view .summary th { text-align: left; border-top: 1px solid #000; }
