@@ -391,9 +391,17 @@ function main_handler(router) {
 
     // Handle form lookups: /:app/_lookup?form=...&field=...&value=... returns JSON document for form where field = value
     else if (request.params.cls == '_lookup') {
+      var form = app.form[query.form];
+      if (!form) { return app.render(404, app.draw_page({name:'404'})); }
       app.db.view('lookup/' + query.form + ':' + query.field, { key: query.value, include_docs: true }, function (err, docs) {
+        if (err) {
+          app.error('Error in lookup/' + query.form + ':' + query.field, err, docs); 
+          return app.render(404, '<pre>' + JSON.stringify(err) + '</pre>');
+        }
+        var doc = (docs && docs[0] && docs[0].doc) || null;
+        if (!app.can('read', form, request.session, doc)) { return app.render(403, app.draw_page({name:'403', operation: 'read' })); }
         response.writeHead(200, { 'Content-type': 'application/json' });
-        response.end(docs && docs[0] && docs[0].doc ? JSON.stringify(docs[0].doc) : '');
+        response.end(JSON.stringify(doc));
       })
     }
 
