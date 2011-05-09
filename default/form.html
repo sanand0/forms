@@ -39,7 +39,7 @@ if (form.description) { %><p><%= _.safetemplate(form.description, context) %></p
     } else if (field.type === "textarea") {
       %><textarea name="<%= field.name %>" id="<%= field.name %>" type="<%= field.type || "text" %>"><%= val %></textarea><%
     } else if (field.type === "select") {
-      %><select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected=\'selected\'" : "", ">", values[i], "</option>"); } %></select><%
+      %><select name="<%= field.name %>"><% for (var i=0,l=values.length; i<l; i++) { print("<option", values[i]==val ? " selected='selected'" : "", ">", values[i], "</option>"); } %></select><%
     } else if (field.type === "computed") {
       %><input name="<%= field.name %>" type="<%= field.type || "text" %>" readonly value="<%= val %>"/><%
     } else {
