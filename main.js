@@ -186,12 +186,15 @@ _.extend(Application.prototype, {
   },
 
   draw_form: function(options) {
-    return _.template(utils.readFile('default/form.html'), this.context({errors: {}, doc:this._context.query, form:this.form[options.name]}, options));
+    var form = this.form[options.name];
+    var renderer = form.renderer ? path.join(this._name, form.renderer) : 'default/form.html';
+    return _.template(utils.readFile(renderer), this.context({errors: {}, doc:this._context.query, form:form}, options));
   },
 
   draw_view: function(options) {
     var ext = options.view.template ? path.extname(options.view.template) : '.html';
-    return _.template(utils.readFile('default/view' + ext), this.context(options));
+    var renderer = options.view.renderer ? path.join(this._name, options.view.renderer) : 'default/view' + ext;
+    return _.template(utils.readFile(renderer), this.context(options));
   },
 
   // Renders templatename (defaults to index.html) using the string/array provided
