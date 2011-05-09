@@ -152,6 +152,9 @@ Each "view" object contains the following fields:
     - `label`: required. The display name. Any text is fine.
     - `formula`: optional. A text with
       [EJS templates](http://documentcloud.github.com/underscore/#template), e.g. `<%= field1*field2 %>kg`
+    - `summary`: optional. An object that has:
+        - `formula`: a summary function. TODO: Document this
+        - `label`: TODO: Document this
 - `actions`: optional. A list of actions to display along with the documents. Actions can have:
     - `label`: required. The text to display for the action (templates using the variables `app`, `view` or `docs` allowed)
     - `url`: The link to visit when the action is clicked (templates using the variables `app`, `view` or `docs` allowed)
@@ -280,7 +283,6 @@ TODO
 - Computed fields in views (e.g. totals)
 - Lookups (for read-only fields, etc.)
 - Github the app code
-- Authentication: LDAP, OAuth2
 - Hierarchical categories
 - Filterable reports with date ranges
 - Reports on order flows
