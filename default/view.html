@@ -31,7 +31,7 @@ if (view.description) { %><p><%= _.safetemplate(view.description, context) %></p
     if (summary && summary.value) {
       %><tr class="summary"><th></th><%
         for (var i=0, field; field=view.fields[i]; i++) {
-          %><th><%= typeof summary.value[field.name] !== "undefined" ? summary.value[field.name] : "" %></th><%
+          %><th><%= field.summary && field.summary.label ? field.summary.label : "" %><%= typeof summary.value[field.name] !== "undefined" ? summary.value[field.name] : "" %></th><%
         }
       %></tr><%
     }

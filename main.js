@@ -111,8 +111,8 @@ function design_app(app) {
       }
       // Create the reduce views for the summary: _design/[viewname:index]/:summary
       var fields   = _(view.fields).map(function(field) { return field.summary ? _.template('"<%= name %>": doc["<%= name %>"]', field) : ''; });
-      var reduce   = _(view.fields).map(function(field) { return _.template(summary[field.summary ? field.summary.formula : ''].reduce  , field); }).join('');
-      var rereduce = _(view.fields).map(function(field) { return _.template(summary[field.summary ? field.summary.formula : ''].rereduce, field); }).join('');
+      var reduce   = _(view.fields).map(function(field) { return _.template(summary[field.summary && field.summary.formula ? field.summary.formula : ''].reduce  , field); }).join('');
+      var rereduce = _(view.fields).map(function(field) { return _.template(summary[field.summary && field.summary.formula ? field.summary.formula : ''].rereduce, field); }).join('');
       if (reduce || rereduce) {
         design.views[':summary'] = {
           "map": _.template(summary_map, { form: view.form, filter:view.filter, fieldobj: _(fields).select(_.identity).join(',') }),
@@ -395,7 +395,7 @@ function main_handler(router) {
       if (!form) { return app.render(404, app.draw_page({name:'404'})); }
       app.db.view('lookup/' + query.form + ':' + query.field, { key: query.value, include_docs: true }, function (err, docs) {
         if (err) {
-          app.error('Error in lookup/' + query.form + ':' + query.field, err, docs); 
+          app.error('Error in lookup/' + query.form + ':' + query.field, err, docs);
           return app.render(404, '<pre>' + JSON.stringify(err) + '</pre>');
         }
         var doc = (docs && docs[0] && docs[0].doc) || null;
